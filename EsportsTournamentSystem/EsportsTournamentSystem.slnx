@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="EsportsTournament.API/EsportsTournament.API.csproj" />
-  <Project Path="EsportsTournament.Core/EsportsTournament.Core.csproj" />
-  <Project Path="EsportsTournament.Web/EsportsTournament.Web.csproj" />
-</Solution>
