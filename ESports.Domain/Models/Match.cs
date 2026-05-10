@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ESports.Domain.Models;
 
 /// <summary>
-/// Representa um jogo entre duas equipas.
+/// Entidade que representa um jogo ou partida entre duas equipas.
 /// </summary>
 public class Match
 {
@@ -21,22 +21,33 @@ public class Match
     [Display(Name = "Resultado Equipa Fora")]
     public int? AwayScore { get; set; }
 
+    /// <summary>
+    /// Indica se o registo foi criado ou editado manualmente por um administrador.
+    /// </summary>
     public bool IsManualOverride { get; set; }
+
+    /// <summary>
+    /// Identificador do registo proveniente da API externa de dados.
+    /// </summary>
     public string? ExternalSourceId { get; set; }
 
-    /* RELACIONAMENTO 1: EQUIPA DA CASA */
+    /// <summary>
+    /// Chave estrangeira para a equipa visitada (casa).
+    /// </summary>
     [ForeignKey(nameof(HomeTeam))]
     [Display(Name = "Equipa Visitada")]
     public int HomeTeamFK { get; set; }
 
-    [InverseProperty(nameof(Team.HomeMatches))] // <-- ESTA É A LINHA MÁGICA
+    [InverseProperty(nameof(Team.HomeMatches))]
     public Team HomeTeam { get; set; } = null!;
 
-    /* RELACIONAMENTO 2: EQUIPA DE FORA */
+    /// <summary>
+    /// Chave estrangeira para a equipa visitante (fora).
+    /// </summary>
     [ForeignKey(nameof(AwayTeam))]
     [Display(Name = "Equipa Visitante")]
     public int AwayTeamFK { get; set; }
 
-    [InverseProperty(nameof(Team.AwayMatches))] // <-- E ESTA TAMBÉM
+    [InverseProperty(nameof(Team.AwayMatches))]
     public Team AwayTeam { get; set; } = null!;
 }
