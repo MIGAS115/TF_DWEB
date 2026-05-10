@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
+
 namespace ESports.Domain.Models;
 
 /// <summary>
@@ -10,5 +11,8 @@ namespace ESports.Domain.Models;
 /// </summary>
 public class MyUser : IdentityUser
 {
+    /// <summary>
+    /// Nome real ou Nickname do utilizador.
+    /// </summary>
     public string FullName { get; set; } = string.Empty;
 }
