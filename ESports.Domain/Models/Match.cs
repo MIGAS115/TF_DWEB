@@ -50,4 +50,11 @@ public class Match
 
     [InverseProperty(nameof(Team.AwayMatches))]
     public Team AwayTeam { get; set; } = null!;
+
+    /// <summary>
+    /// Chave estrangeira para o Torneio onde o jogo decorre.
+    /// </summary>
+    [ForeignKey(nameof(Tournament))]
+    public int TournamentFK { get; set; }
+    public Tournament Tournament { get; set; } = null!;
 }

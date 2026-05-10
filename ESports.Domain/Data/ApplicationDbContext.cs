@@ -27,7 +27,11 @@ public class ApplicationDbContext : IdentityDbContext<MyUser>
     /// <summary>
     /// Tabela intermédia de associação N:M para registo das equipas favoritas de cada utilizador.
     /// </summary>
-    public DbSet<UserFavoriteTeam> UserFavoriteTeams { get; set; } = null!;
+    public DbSet<Favorite> Favorites { get; set; }
+    public DbSet<Admin> Admins { get; set; } = null!;
+    public DbSet<Normal> Normals { get; set; } = null!;
+    public DbSet<Tournament> Tournaments { get; set; } = null!;
+    public DbSet<TournamentTeam> TournamentTeams { get; set; } = null!;
 
     /// <summary>
     /// Configuração das regras e restrições de relacionamento da base de dados através da Fluent API.
