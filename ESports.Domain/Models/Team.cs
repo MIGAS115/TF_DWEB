@@ -28,5 +28,5 @@ public class Team
 
     public ICollection<Match> HomeMatches { get; set; } = [];
     public ICollection<Match> AwayMatches { get; set; } = [];
-    public ICollection<UserFavoriteTeam> FavoritedByUsers { get; set; } = [];
+    public ICollection<Favorite> FavoritesList { get; set; } = [];
 }

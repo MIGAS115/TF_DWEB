@@ -1,10 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ESports.Domain.Models
 {
-    internal class Admin
+    /// <summary>
+    /// Utilizador com privilégios de Administração (Herda de MyUser)
+    /// </summary>
+    public class Admin : MyUser
     {
+        [Required]
+        [StringLength(50)]
+        public string PermissionLevel { get; set; } = "FullAccess";
     }
 }
