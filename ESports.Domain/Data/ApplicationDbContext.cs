@@ -4,6 +4,9 @@ using ESports.Domain.Models;
 
 namespace ESports.Domain.Data;
 
+/// <summary>
+/// Contexto principal da base de dados responsável pelo mapeamento das entidades e gestão do sistema de autenticação Identity.
+/// </summary>
 public class ApplicationDbContext : IdentityDbContext<MyUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -11,11 +14,24 @@ public class ApplicationDbContext : IdentityDbContext<MyUser>
     {
     }
 
+    /// <summary>
+    /// Tabela representativa das equipas.
+    /// </summary>
     public DbSet<Team> Teams { get; set; } = null!;
+
+    /// <summary>
+    /// Tabela representativa dos jogos agendados ou concluídos.
+    /// </summary>
     public DbSet<ESports.Domain.Models.Match> Matches { get; set; } = null!;
+
+    /// <summary>
+    /// Tabela intermédia de associação N:M para registo das equipas favoritas de cada utilizador.
+    /// </summary>
     public DbSet<UserFavoriteTeam> UserFavoriteTeams { get; set; } = null!;
 
-    // O método tem de estar AQUI DENTRO, entre as chavetas da classe!
+    /// <summary>
+    /// Configuração das regras e restrições de relacionamento da base de dados através da Fluent API.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
