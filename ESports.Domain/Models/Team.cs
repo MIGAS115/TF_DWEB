@@ -17,6 +17,13 @@ public class Team
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Nome do ficheiro correspondente ao logótipo da equipa (guardado no servidor).
+    /// </summary>
+    [Display(Name = "Logótipo")]
+    [StringLength(255)]
+    public string? LogoPath { get; set; }
+
+    /// <summary>
     /// Indica se o registo foi inserido/editado manualmente (Redundância/Defesa).
     /// </summary>
     public bool IsManualOverride { get; set; }
