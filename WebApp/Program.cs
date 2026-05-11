@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using WebApp.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddQuickGridEntityFrameworkAdapter();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -27,11 +30,15 @@ builder.Services.AddDefaultIdentity<MyUser>(options => options.SignIn.RequireCon
 /// </summary>
 builder.Services.AddRazorPages();
 
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    await app.UseItToSeedSqlServerAsync();
 }
 else
 {
@@ -40,12 +47,13 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages().WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
