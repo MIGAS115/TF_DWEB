@@ -51,3 +51,4 @@ public class Team
     /// Coleção de utilizadores que marcaram esta equipa como favorita.
     /// </summary>
     public ICollection<Favorite> FavoritedBy { get; set; } = new List<Favorite>();
+}

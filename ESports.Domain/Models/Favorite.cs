@@ -7,12 +7,12 @@ namespace ESports.Domain.Models
     /// <summary>
     /// Relacionamento M:N entre Utilizador Normal e Equipa
     /// </summary>
-    [PrimaryKey(nameof(NormalUserFK), nameof(TeamFK))]
+    [PrimaryKey(nameof(UserFK), nameof(TeamFK))]
     public class Favorite
     {
 
         [ForeignKey(nameof(Normal))]
-        public string NormalUserFK { get; set; } = string.Empty;
+        public string UserFK { get; set; } = string.Empty;
         public Normal Normal { get; set; } = null!;
 
         [ForeignKey(nameof(Team))]

@@ -7,9 +7,13 @@
 
 <h1>Index</h1>
 
-<p>
-    <a asp-page="Create">Create New</a>
-</p>
+@if (User.IsInRole("Admin"))
+{
+    <p>
+        <a asp-page="Create" class="btn btn-primary">Create New</a>
+    </p>
+}
+
 <table class="table">
     <thead>
         <tr>
@@ -17,32 +21,67 @@
                 @Html.DisplayNameFor(model => model.Team[0].Name)
             </th>
             <th>
+                Logo
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.Team[0].IsManualOverride)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.Team[0].ExternalSourceId)
             </th>
-            <th></th>
+            <th>Ações</th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Team) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsManualOverride)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ExternalSourceId)
-            </td>
-            <td>
-                <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model.Team)
+        {
+            <tr>
+                <td class="align-middle">
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td class="align-middle">
+                    @if (!string.IsNullOrEmpty(item.LogoPath))
+                    {
+                        <img src="~/images/logos/@item.LogoPath" alt="Logo da Equipa" style="max-height: 40px;" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">Sem Logo</span>
+                    }
+                </td>
+                <td class="align-middle">
+                    @Html.DisplayFor(modelItem => item.IsManualOverride)
+                </td>
+                <td class="align-middle">
+                    @Html.DisplayFor(modelItem => item.ExternalSourceId)
+                </td>
+                <td class="align-middle">
+                    <div class="d-flex align-items-center gap-2">
+                    
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Normal"))
+                        {
+                            <form method="post" asp-page-handler="ToggleFavorite" asp-route-teamId="@item.Id" style="display:inline; margin:0;">
+                                @if (Model.UserFavoriteTeamIds.Contains(item.Id))
+                                {
+                                    <button type="submit" class="btn btn-sm btn-warning">★ Remover Favorito</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">☆ Adicionar Favorito</button>
+                                }
+                            </form>
+                        }
+
+                        <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Details</a>
+                    
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info">Edit</a>
+                            <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
