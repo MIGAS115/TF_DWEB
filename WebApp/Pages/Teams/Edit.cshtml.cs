@@ -94,7 +94,8 @@ namespace WebApp.Pages.Teams
                     Directory.CreateDirectory(folder);
                 }
 
-                string fileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(LogoFile.FileName);
+                var fileExtension = Path.GetExtension(LogoFile.FileName).ToLowerInvariant();
+                string fileName = Guid.NewGuid().ToString() + fileExtension;
                 string filePath = Path.Combine(folder, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
