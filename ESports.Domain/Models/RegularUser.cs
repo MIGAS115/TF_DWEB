@@ -13,7 +13,7 @@ namespace ESports.Domain.Models
         /// Data em que o utilizador se registou
         /// </summary>
         [DataType(DataType.Date)]
-        public DateTime RegistrationDate { get; set; } = DateTime.Now;
+        public DateOnly RegistrationDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
 
         /* ****************************************
          * Construção dos Relacionamentos

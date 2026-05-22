@@ -1,84 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Authorization;
-using ESports.Domain.Data;
-using ESports.Domain.Models;
+﻿@page
+@model WebApp.Pages.Teams.EditModel
 
-namespace WebApp.Pages.Teams
-{
-    /// <summary>
-    /// PageModel responsável pela criação de novas equipas, restrito a administradores.
-    ///
-</summary>
-    [Authorize(Roles = "Admin")]
-    public class CreateModel : PageModel
-    {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+@{
+    ViewData["Title"] = "Edit";
+}
 
-        public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
-        {
-            _context = context;
-            _environment = environment;
-        }
+<h1>Edit</h1>
+<h4>Team</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Team.Id" />
+            <input type="hidden" asp-for="Team.LogoPath" />
+            
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Team.Name" class="control-label"></label>
+                <input asp-for="Team.Name" class="form-control" aria-required="true" />
+                <span asp-validation-for="Team.Name" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group">
+                <label class="control-label">Substituir Logo (Opcional)</label>
+                <input type="file" asp-for="LogoFile" class="form-control" />
+            </div>
 
-        public IActionResult OnGet()
-        {
-            return Page();
-        }
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Team.IsManualOverride" /> @Html.DisplayNameFor(model => model.Team.IsManualOverride)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label asp-for="Team.ExternalSourceId" class="control-label"></label>
+                <input asp-for="Team.ExternalSourceId" class="form-control" />
+                <span asp-validation-for="Team.ExternalSourceId" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mt-3">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
 
-        [BindProperty]
-        public Team Team { get; set; } = default!;
-
-        /// <summary>
-    /// Propriedade temporária para receber o ficheiro de imagem do formulário.
-    ///
-</summary>
-        [BindProperty]
-        public IFormFile? LogoFile { get; set; }
-
-        /// <summary>
-    /// Processa a submissão do formulário, incluindo o upload da imagem.
-    ///
-</summary>
-        public async Task<IActionResult>
-    OnPostAsync()
-    {
-    if (!ModelState.IsValid || _context.Teams == null || Team == null)
-    {
-    return Page();
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
-    // Lógica de Processamento da Imagem
-    if (LogoFile != null && LogoFile.Length > 0)
-    {
-    // Definir a pasta de destino (wwwroot/images/logos)
-    string folder = Path.Combine(_environment.WebRootPath, "images", "logos");
-
-    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
-    // Gerar um nome único para evitar conflitos (GUID + nome original)
-    string fileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(LogoFile.FileName);
-    string filePath = Path.Combine(folder, fileName);
-
-    // 3. Guardar o ficheiro no disco
-    using (var stream = new FileStream(filePath, FileMode.Create))
-    {
-    await LogoFile.CopyToAsync(stream);
-    }
-
-    // Guardar apenas o nome do ficheiro na propriedade da Equipa
-    Team.Logo = fileName;
-    }
-
-    _context.Teams.Add(Team);
-    await _context.SaveChangesAsync();
-
-    return RedirectToPage("./Index");
-    }
-    }
-    }
+}

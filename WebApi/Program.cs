@@ -20,10 +20,24 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// CORREÇÃO ERRO 1: Usar 'AddIdentity' puro em vez de 'AddDefaultIdentity' na API
+/// <summary>
+/// Configuração do Identity para a gestão de utilizadores e autenticação.
+/// </summary>
 builder.Services.AddIdentity<MyUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+/// <summary>
+/// Configuração da gestão de Sessão e Cookies.
+/// (Nota: IdleTimeout definido para 1000 segundos conforme guia do professor).
+/// </summary>
+builder.Services.AddSession(options => {
+    options.IdleTimeout = TimeSpan.FromSeconds(1000); // CORRIGIDO AQUI!
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddDistributedMemoryCache();
 
 var app = builder.Build();
 
@@ -34,6 +48,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Na segunda secção, adicionar para começar a usar os 'cookies'
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 

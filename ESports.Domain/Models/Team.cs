@@ -8,6 +8,9 @@ namespace ESports.Domain.Models;
 /// </summary>
 public class Team
 {
+    /// <summary>
+    /// Chave primária da equipa.
+    /// </summary>
     [Key]
     public int Id { get; set; }
 
@@ -16,24 +19,36 @@ public class Team
     [Display(Name = "Nome da Equipa")]
     public string Name { get; set; } = string.Empty;
 
+
     /// <summary>
-    /// Nome do ficheiro correspondente ao logótipo da equipa (guardado no servidor).
-    /// </summary>
+    /// Caminho do ficheiro do logótipo da equipa.
+    /// </summary> 
     [Display(Name = "Logótipo")]
     [StringLength(255)]
     public string? LogoPath { get; set; }
 
     /// <summary>
-    /// Indica se o registo foi inserido/editado manualmente (Redundância/Defesa).
+    /// Identificador da origem externa dos dados se aplicável.
+    /// </summary>
+    public string? ExternalSourceId { get; set; }
+
+    /// <summary>
+    /// Indica se o registo foi inserido ou modificado manualmente pelo administrador.
     /// </summary>
     public bool IsManualOverride { get; set; }
 
     /// <summary>
-    /// ID proveniente da API externa.
+    /// Coleção de jogos efetuados em casa.
     /// </summary>
-    public string? ExternalSourceId { get; set; }
+    public ICollection<Match> HomeMatches { get; set; } = new List<Match>();
 
-    public ICollection<Match> HomeMatches { get; set; } = [];
-    public ICollection<Match> AwayMatches { get; set; } = [];
-    public ICollection<Favorite> FavoritesList { get; set; } = [];
+    /// <summary>
+    /// Coleção de jogos efetuados fora.
+    /// </summary>
+    public ICollection<Match> AwayMatches { get; set; } = new List<Match>();
+
+    /// <summary>
+    /// Coleção de utilizadores que marcaram esta equipa como favorita.
+    /// </summary>
+    public ICollection<Favorite> FavoritedBy { get; set; } = new List<Favorite>();
 }
