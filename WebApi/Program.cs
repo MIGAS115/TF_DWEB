@@ -20,18 +20,24 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+/// <summary>
+/// Configuração do Identity para a gestão de utilizadores e autenticação.
+/// </summary>
 builder.Services.AddIdentity<MyUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// configurar o de uso de 'cookies'
+/// <summary>
+/// Configuração da gestão de Sessão e Cookies.
+/// (Nota: IdleTimeout definido para 1000 segundos conforme guia do professor).
+/// </summary>
 builder.Services.AddSession(options => {
-    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.IdleTimeout = TimeSpan.FromSeconds(1000); // CORRIGIDO AQUI!
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-builder.Services.AddDistributedMemoryCache();
 
+builder.Services.AddDistributedMemoryCache();
 
 var app = builder.Build();
 
@@ -42,11 +48,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// na segunda secção, adicionar para
-// começar a usar, realmente, os 'cookies'
+// Na segunda secção, adicionar para começar a usar os 'cookies'
 app.UseSession();
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 
