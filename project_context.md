@@ -242,6 +242,13 @@ public class Team
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Nome do ficheiro correspondente ao logótipo da equipa (guardado no servidor).
+    /// </summary>
+    [Display(Name = "Logótipo")]
+    [StringLength(255)]
+    public string? LogoPath { get; set; }
+
+    /// <summary>
     /// Indica se o registo foi inserido/editado manualmente (Redundância/Defesa).
     /// </summary>
     public bool IsManualOverride { get; set; }
@@ -367,6 +374,15 @@ builder.Services.AddIdentity<MyUser, IdentityRole>(options => options.SignIn.Req
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// configurar o de uso de 'cookies'
+builder.Services.AddSession(options => {
+    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddDistributedMemoryCache();
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -375,6 +391,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// na segunda secção, adicionar para
+// começar a usar, realmente, os 'cookies'
+app.UseSession();
+
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -430,10 +451,11 @@ app.Run();
 ## Ficheiro: `WebApp\Program.cs`
 
 ```csharp
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using WebApp.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -445,6 +467,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddQuickGridEntityFrameworkAdapter();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -459,11 +483,15 @@ builder.Services.AddDefaultIdentity<MyUser>(options => options.SignIn.RequireCon
 /// </summary>
 builder.Services.AddRazorPages();
 
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    await app.UseItToSeedSqlServerAsync();
 }
 else
 {
@@ -472,13 +500,14 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages().WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
 ```
@@ -847,6 +876,598 @@ else
 ```html
 ﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
 <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Create.cshtml`
+
+```html
+﻿@page
+@model WebApp.Pages.Teams.CreateModel
+
+        @{
+        ViewData["Title"] = "Create";
+        }
+        [Authorize(Roles = "Admin")]
+        <h1>Create</h1>
+        
+    <h4>Team</h4>
+    <hr />
+    <div class="row">
+    <div class="col-md-4">
+    <form method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <span class="text-danger">*</span>
+                <label asp-for="Team.Name" class="control-label"></label>
+                <input asp-for="Team.Name" class="form-control" aria-required="true"/>
+                <span asp-validation-for="Team.Name" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Team.IsManualOverride" /> @Html.DisplayNameFor(model => model.Team.IsManualOverride)
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="Team.ExternalSourceId" class="control-label"></label>
+                <input asp-for="Team.ExternalSourceId" class="form-control" />
+                <span asp-validation-for="Team.ExternalSourceId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Create.cshtml.cs`
+
+```csharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+
+namespace WebApp.Pages.Teams
+{
+    public class CreateModel : PageModel
+    {
+        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+
+        public CreateModel(ESports.Domain.Data.ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public IActionResult OnGet()
+        {
+            return Page();
+        }
+
+        [BindProperty]
+        public Team Team { get; set; } = default!;
+
+        // For more information, see https://aka.ms/RazorPagesCRUD.
+        public async Task<IActionResult> OnPostAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            _context.Teams.Add(Team);
+            await _context.SaveChangesAsync();
+
+            return RedirectToPage("./Index");
+        }
+    }
+}
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Delete.cshtml`
+
+```html
+﻿@page
+@model WebApp.Pages.Teams.DeleteModel
+
+@{
+    ViewData["Title"] = "Delete";
+}
+[Authorize(Roles = "Admin")]
+
+<h1>Delete</h1>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>Team</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.IsManualOverride)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.IsManualOverride)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.ExternalSourceId)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.ExternalSourceId)
+        </dd>
+    </dl>
+    
+    <form method="post">
+        <input type="hidden" asp-for="Team.Id" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-page="./Index">Back to List</a>
+    </form>
+</div>
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Delete.cshtml.cs`
+
+```csharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+using System.IO;
+
+namespace WebApp.Pages.Teams
+{
+    /// <summary>
+    /// PageModel responsável pela remoção de equipas e dos respetivos ficheiros de logo.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    public class DeleteModel : PageModel
+    {
+        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+
+        public DeleteModel(ESports.Domain.Data.ApplicationDbContext context, IWebHostEnvironment environment)
+        {
+            _context = context;
+            _environment = environment;
+        }
+
+        [BindProperty]
+        public Team Team { get; set; } = default!;
+
+        public async Task<IActionResult> OnGetAsync(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var team = await _context.Teams.FirstOrDefaultAsync(m => m.Id == id);
+
+            if (team == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                Team = team;
+            }
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAsync(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var team = await _context.Teams.FindAsync(id);
+
+            if (team != null)
+            {
+                Team = team;
+
+                // 1. Lógica para apagar o ficheiro físico da imagem
+                if (!string.IsNullOrEmpty(Team.Logo))
+                {
+                    string filePath = Path.Combine(_environment.WebRootPath, "images", "logos", Team.Logo);
+
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+
+                // 2. Remover o registo da Base de Dados
+                _context.Teams.Remove(Team);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToPage("./Index");
+        }
+    }
+}
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Details.cshtml`
+
+```html
+﻿@page
+@model WebApp.Pages.Teams.DetailsModel
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Team</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.Name)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.Name)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.IsManualOverride)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.IsManualOverride)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Team.ExternalSourceId)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Team.ExternalSourceId)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-page="./Edit" asp-route-id="@Model.Team.Id">Edit</a> |
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Details.cshtml.cs`
+
+```csharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+
+namespace WebApp.Pages.Teams
+{
+    public class DetailsModel : PageModel
+    {
+        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+
+        public DetailsModel(ESports.Domain.Data.ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public Team Team { get; set; } = default!;
+
+        public async Task<IActionResult> OnGetAsync(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var team = await _context.Teams.FirstOrDefaultAsync(m => m.Id == id);
+
+            if (team is not null)
+            {
+                Team = team;
+
+                return Page();
+            }
+
+            return NotFound();
+        }
+    }
+}
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Edit.cshtml`
+
+```html
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Authorization;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+
+namespace WebApp.Pages.Teams
+{
+    /// <summary>
+    /// PageModel responsável pela criação de novas equipas, restrito a administradores.
+    ///
+</summary>
+    [Authorize(Roles = "Admin")]
+    public class CreateModel : PageModel
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+
+        public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
+        {
+            _context = context;
+            _environment = environment;
+        }
+
+        public IActionResult OnGet()
+        {
+            return Page();
+        }
+
+        [BindProperty]
+        public Team Team { get; set; } = default!;
+
+        /// <summary>
+    /// Propriedade temporária para receber o ficheiro de imagem do formulário.
+    ///
+</summary>
+        [BindProperty]
+        public IFormFile? LogoFile { get; set; }
+
+        /// <summary>
+    /// Processa a submissão do formulário, incluindo o upload da imagem.
+    ///
+</summary>
+        public async Task<IActionResult>
+    OnPostAsync()
+    {
+    if (!ModelState.IsValid || _context.Teams == null || Team == null)
+    {
+    return Page();
+    }
+
+    // Lógica de Processamento da Imagem
+    if (LogoFile != null && LogoFile.Length > 0)
+    {
+    // Definir a pasta de destino (wwwroot/images/logos)
+    string folder = Path.Combine(_environment.WebRootPath, "images", "logos");
+
+    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+    // Gerar um nome único para evitar conflitos (GUID + nome original)
+    string fileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(LogoFile.FileName);
+    string filePath = Path.Combine(folder, fileName);
+
+    // 3. Guardar o ficheiro no disco
+    using (var stream = new FileStream(filePath, FileMode.Create))
+    {
+    await LogoFile.CopyToAsync(stream);
+    }
+
+    // Guardar apenas o nome do ficheiro na propriedade da Equipa
+    Team.Logo = fileName;
+    }
+
+    _context.Teams.Add(Team);
+    await _context.SaveChangesAsync();
+
+    return RedirectToPage("./Index");
+    }
+    }
+    }
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Edit.cshtml.cs`
+
+```csharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+
+namespace WebApp.Pages.Teams
+{
+    public class EditModel : PageModel
+    {
+        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+
+        public EditModel(ESports.Domain.Data.ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        [BindProperty]
+        public Team Team { get; set; } = default!;
+
+        public async Task<IActionResult> OnGetAsync(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var team =  await _context.Teams.FirstOrDefaultAsync(m => m.Id == id);
+            if (team == null)
+            {
+                return NotFound();
+            }
+            Team = team;
+            return Page();
+        }
+
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more information, see https://aka.ms/RazorPagesCRUD.
+        public async Task<IActionResult> OnPostAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            _context.Attach(Team).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TeamExists(Team.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToPage("./Index");
+        }
+
+        private bool TeamExists(int id)
+        {
+            return _context.Teams.Any(e => e.Id == id);
+        }
+    }
+}
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Index.cshtml`
+
+```html
+﻿@page
+@model WebApp.Pages.Teams.IndexModel
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-page="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Team[0].Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Team[0].IsManualOverride)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Team[0].ExternalSourceId)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Team) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsManualOverride)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ExternalSourceId)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+```
+
+## Ficheiro: `WebApp\Pages\Teams\Index.cshtml.cs`
+
+```csharp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using ESports.Domain.Data;
+using ESports.Domain.Models;
+
+namespace WebApp.Pages.Teams
+{
+    public class IndexModel : PageModel
+    {
+        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+
+        public IndexModel(ESports.Domain.Data.ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public IList<Team> Team { get;set; } = default!;
+
+        public async Task OnGetAsync()
+        {
+            Team = await _context.Teams.ToListAsync();
+        }
+    }
+}
 
 ```
 

@@ -20,10 +20,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// CORREÇÃO ERRO 1: Usar 'AddIdentity' puro em vez de 'AddDefaultIdentity' na API
 builder.Services.AddIdentity<MyUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// configurar o de uso de 'cookies'
+builder.Services.AddSession(options => {
+    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddDistributedMemoryCache();
+
 
 var app = builder.Build();
 
@@ -33,6 +41,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// na segunda secção, adicionar para
+// começar a usar, realmente, os 'cookies'
+app.UseSession();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

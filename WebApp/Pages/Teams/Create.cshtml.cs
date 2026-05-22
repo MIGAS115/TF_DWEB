@@ -1,39 +1,96 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
 
 namespace WebApp.Pages.Teams
 {
+    /// <summary>
+    /// PageModel responsável pela lógica de criação de novas equipas no sistema.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
     public class CreateModel : PageModel
     {
-        private readonly ESports.Domain.Data.ApplicationDbContext _context;
+        /// <summary>
+        /// Contexto de acesso à base de dados do projeto.
+        /// </summary>
+        private readonly ApplicationDbContext _context;
 
-        public CreateModel(ESports.Domain.Data.ApplicationDbContext context)
+        /// <summary>
+        /// Ambiente de alojamento web para obtenção dos caminhos físicos do servidor.
+        /// </summary>
+        private readonly IWebHostEnvironment _environment;
+
+        /// <summary>
+        /// Construtor do PageModel com injeção de dependências.
+        /// </summary>
+        /// <param name="context">Contexto da base de dados.</param>
+        /// <param name="environment">Ambiente de alojamento web.</param>
+        public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
+        /// <summary>
+        /// Propriedade que armazena os dados da equipa a ser criada, vinculada ao formulário.
+        /// </summary>
+        [BindProperty]
+        public Team Team { get; set; } = null!;
+
+        /// <summary>
+        /// Propriedade temporária que recebe o ficheiro de imagem do logótipo enviado via formulário.
+        /// </summary>
+        [BindProperty]
+        public IFormFile? LogoFile { get; set; }
+
+        /// <summary>
+        /// Disponibiliza e inicializa a página com o formulário de criação.
+        /// </summary>
+        /// <returns>O resultado da página Razor.</returns>
         public IActionResult OnGet()
         {
             return Page();
         }
 
-        [BindProperty]
-        public Team Team { get; set; } = default!;
-
-        // For more information, see https://aka.ms/RazorPagesCRUD.
+        /// <summary>
+        /// Processa a submissão do formulário via HTTP POST, realiza o upload do ficheiro e persiste a entidade.
+        /// </summary>
+        /// <returns>Redirecionamento para o Index em caso de sucesso; caso contrário, recarrega a página com validações.</returns>
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || _context.Teams == null || Team == null)
             {
                 return Page();
             }
+
+            if (LogoFile != null && LogoFile.Length > 0)
+            {
+                string folder = Path.Combine(_environment.WebRootPath, "images", "logos");
+
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
+
+                string fileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(LogoFile.FileName);
+                string filePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await LogoFile.CopyToAsync(stream);
+                }
+
+                Team.LogoPath = fileName;
+            }
+
+            Team.IsManualOverride = true;
 
             _context.Teams.Add(Team);
             await _context.SaveChangesAsync();
