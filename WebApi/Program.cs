@@ -29,10 +29,9 @@ builder.Services.AddIdentity<MyUser, IdentityRole>(options => options.SignIn.Req
 
 /// <summary>
 /// Configuração da gestão de Sessão e Cookies.
-/// (Nota: IdleTimeout definido para 1000 segundos conforme guia do professor).
 /// </summary>
 builder.Services.AddSession(options => {
-    options.IdleTimeout = TimeSpan.FromSeconds(1000); // CORRIGIDO AQUI!
+    options.IdleTimeout = TimeSpan.FromSeconds(1000); 
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
