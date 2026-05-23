@@ -37,18 +37,25 @@ builder.Services.AddSession(options => {
 });
 
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Configura o Swagger para incluir os comentários XML da tua API
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+});
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
+app.MapOpenApi();
 
 app.UseHttpsRedirection();
 
 // Na segunda secção, adicionar para começar a usar os 'cookies'
 app.UseSession();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
