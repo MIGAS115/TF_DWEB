@@ -90,12 +90,11 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TeamDTO>> PostTeam(TeamCreateDTO teamCreateDto)
         {
-            // 1. Mapear o DTO recebido para a Entidade de Domínio
             var novaEquipa = new Team
             {
                 Name = teamCreateDto.Name,
                 LogoPath = teamCreateDto.LogoPath,
-                IsManualOverride = false
+                IsManualOverride = false 
             };
 
             try
@@ -112,14 +111,66 @@ namespace WebApi.Controllers
                     TotalMatches = 0
                 };
 
-               
                 return CreatedAtAction(nameof(GetTeam), new { id = novaEquipa.Id }, teamDtoRetorno);
             }
             catch (Exception)
             {
-                
                 return StatusCode(500, "Ocorreu um erro interno ao tentar guardar a equipa.");
             }
+        }
+        /// <summary>
+        /// Atualiza os dados de uma equipa existente.
+        /// </summary>
+        /// <param name="id">O ID da equipa a editar.</param>
+        /// <param name="teamUpdateDto">Os novos dados da equipa.</param>
+        /// <returns>Resposta vazia (204 No Content) em caso de sucesso.</returns>
+        /// <response code="204">Equipa atualizada com sucesso.</response>
+        /// <response code="404">A equipa especificada não foi encontrada.</response>
+        /// <response code="500">Erro interno do servidor.</response>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTeam(int id, TeamCreateDTO teamUpdateDto)
+        {
+            var equipa = await _context.Teams.FindAsync(id);
+            if (equipa == null)
+            {
+                return NotFound(new { Message = $"A equipa com o ID {id} não foi encontrada." });
+            }
+
+            equipa.Name = teamUpdateDto.Name;
+            equipa.LogoPath = teamUpdateDto.LogoPath;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ocorreu um erro interno ao tentar atualizar a equipa.");
+            }
+        }
+
+        /// <summary>
+        /// Remove uma equipa da plataforma.
+        /// </summary>
+        /// <param name="id">O ID da equipa a eliminar.</param>
+        /// <returns>Resposta vazia (204 No Content) em caso de sucesso.</returns>
+        /// <response code="204">Equipa removida com sucesso.</response>
+        /// <response code="404">A equipa especificada não foi encontrada.</response>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTeam(int id)
+        {
+            var equipa = await _context.Teams.FindAsync(id);
+            if (equipa == null)
+            {
+                return NotFound(new { Message = $"A equipa com o ID {id} não foi encontrada." });
+            }
+
+            _context.Teams.Remove(equipa);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
