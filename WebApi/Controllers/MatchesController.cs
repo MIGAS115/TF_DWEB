@@ -72,15 +72,24 @@ namespace WebApi.Controllers
         /// <summary>
         /// Cria um novo jogo.
         /// </summary>
+        /// <param name="matchCreateDto">Dados para a criação do jogo.</param>
+        /// <returns>O jogo recém-criado.</returns>
+        /// <response code="21">Created - Jogo criado com sucesso.</response>
+        /// <response code="400">Bad Request - Dados inválidos ou violação de chaves estrangeiras.</response>
         [HttpPost]
         public async Task<ActionResult<MatchDTO>> PostMatch(MatchCreateDTO matchCreateDto)
         {
+            if (matchCreateDto.HomeTeamFK == matchCreateDto.AwayTeamFK)
+            {
+                return BadRequest(new { Message = "A equipa da casa não pode ser igual à equipa visitante." });
+            }
+
             var novoJogo = new Match
             {
                 HomeTeamFK = matchCreateDto.HomeTeamFK,
                 AwayTeamFK = matchCreateDto.AwayTeamFK,
-                MatchDate = matchCreateDto.MatchDate, 
-                TournamentFK = matchCreateDto.TournamentFK 
+                MatchDate = matchCreateDto.MatchDate,
+                TournamentFK = matchCreateDto.TournamentFK
             };
 
             try
@@ -88,14 +97,11 @@ namespace WebApi.Controllers
                 _context.Matches.Add(novoJogo);
                 await _context.SaveChangesAsync();
 
-                await _context.Entry(novoJogo).Reference(m => m.HomeTeam).LoadAsync();
-                await _context.Entry(novoJogo).Reference(m => m.AwayTeam).LoadAsync();
-
                 var matchDtoRetorno = new MatchDTO
                 {
                     Id = novoJogo.Id,
-                    HomeTeamName = novoJogo.HomeTeam?.Name ?? "Desconhecida",
-                    AwayTeamName = novoJogo.AwayTeam?.Name ?? "Desconhecida",
+                    HomeTeamName = "Criada com Sucesso",
+                    AwayTeamName = "Criada com Sucesso",
                     MatchDate = novoJogo.MatchDate
                 };
 
@@ -103,16 +109,26 @@ namespace WebApi.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(500, "Ocorreu um erro ao guardar o jogo.");
+                return BadRequest();
             }
         }
 
         /// <summary>
         /// Edita um jogo existente.
         /// </summary>
+        /// <param name="id">ID do jogo a editar.</param>
+        /// <param name="matchUpdateDto">Novos dados do jogo.</param>
+        /// <response code="204">No Content - Atualizado com sucesso.</response>
+        /// <response code="400">Bad Request - Dados inválidos ou chaves corrompidas.</response>
+        /// <response code="404">Not Found - Jogo não encontrado.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutMatch(int id, MatchCreateDTO matchUpdateDto)
         {
+            if (matchUpdateDto.HomeTeamFK == matchUpdateDto.AwayTeamFK)
+            {
+                return BadRequest(new { Message = "A equipa da casa não pode ser igual à equipa visitante." });
+            }
+
             var jogo = await _context.Matches.FindAsync(id);
             if (jogo == null)
                 return NotFound(new { Message = $"O jogo com o ID {id} não foi encontrado." });
@@ -120,7 +136,7 @@ namespace WebApi.Controllers
             jogo.HomeTeamFK = matchUpdateDto.HomeTeamFK;
             jogo.AwayTeamFK = matchUpdateDto.AwayTeamFK;
             jogo.MatchDate = matchUpdateDto.MatchDate;
-            jogo.TournamentFK = matchUpdateDto.TournamentFK; 
+            jogo.TournamentFK = matchUpdateDto.TournamentFK;
 
             try
             {
@@ -129,7 +145,7 @@ namespace WebApi.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(500, "Ocorreu um erro interno ao atualizar o jogo.");
+                return BadRequest();
             }
         }
 

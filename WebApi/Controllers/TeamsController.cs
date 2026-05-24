@@ -82,11 +82,10 @@ namespace WebApi.Controllers
         /// <summary>
         /// Cria uma nova equipa na plataforma.
         /// </summary>
-        /// <param name="teamCreateDto">Os dados da equipa a ser criada (sem metadados de sistema).</param>
+        /// <param name="teamCreateDto">Os dados da equipa a ser criada.</param>
         /// <returns>A equipa recém-criada mapeada para DTO.</returns>
-        /// <response code="201">Equipa criada com sucesso.</response>
-        /// <response code="400">Os dados submetidos são inválidos.</response>
-        /// <response code="500">Ocorreu um erro interno no servidor.</response>
+        /// <response code="201">Created - Equipa criada com sucesso.</response>
+        /// <response code="400">Bad Request - Os dados submetidos são inválidos.</response>
         [HttpPost]
         public async Task<ActionResult<TeamDTO>> PostTeam(TeamCreateDTO teamCreateDto)
         {
@@ -94,7 +93,7 @@ namespace WebApi.Controllers
             {
                 Name = teamCreateDto.Name,
                 LogoPath = teamCreateDto.LogoPath,
-                IsManualOverride = false 
+                IsManualOverride = false
             };
 
             try
@@ -115,18 +114,19 @@ namespace WebApi.Controllers
             }
             catch (Exception)
             {
-                return StatusCode(500, "Ocorreu um erro interno ao tentar guardar a equipa.");
+                return BadRequest();
             }
         }
+
         /// <summary>
         /// Atualiza os dados de uma equipa existente.
         /// </summary>
         /// <param name="id">O ID da equipa a editar.</param>
         /// <param name="teamUpdateDto">Os novos dados da equipa.</param>
         /// <returns>Resposta vazia (204 No Content) em caso de sucesso.</returns>
-        /// <response code="204">Equipa atualizada com sucesso.</response>
-        /// <response code="404">A equipa especificada não foi encontrada.</response>
-        /// <response code="500">Erro interno do servidor.</response>
+        /// <response code="204">No Content - Equipa atualizada com sucesso.</response>
+        /// <response code="400">Bad Request - Dados inválidos.<///response>
+        /// <response code="404">Not Found - A equipa especificada não foi encontrada.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTeam(int id, TeamCreateDTO teamUpdateDto)
         {
@@ -142,22 +142,22 @@ namespace WebApi.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-
                 return NoContent();
             }
             catch (Exception)
             {
-                return StatusCode(500, "Ocorreu um erro interno ao tentar atualizar a equipa.");
+                return BadRequest();
             }
         }
 
         /// <summary>
-        /// Remove uma equipa da plataforma.
+        /// Remove uma equipa da plataforma salvaguardando a integridade relacional.
         /// </summary>
         /// <param name="id">O ID da equipa a eliminar.</param>
         /// <returns>Resposta vazia (204 No Content) em caso de sucesso.</returns>
-        /// <response code="204">Equipa removida com sucesso.</response>
-        /// <response code="404">A equipa especificada não foi encontrada.</response>
+        /// <response code="204">No Content - Equipa removida com sucesso.</response>
+        /// <response code="400">Bad Request - A equipa possui jogos ou favoritos vinculados e não pode ser eliminada.</response>
+        /// <response code="404">Not Found - A equipa especificada não foi encontrada.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
@@ -167,10 +167,25 @@ namespace WebApi.Controllers
                 return NotFound(new { Message = $"A equipa com o ID {id} não foi encontrada." });
             }
 
-            _context.Teams.Remove(equipa);
-            await _context.SaveChangesAsync();
+            var temJogosComoCasa = await _context.Matches.AnyAsync(m => m.HomeTeamFK == id);
+            var temJogosComoFora = await _context.Matches.AnyAsync(m => m.AwayTeamFK == id);
+            var temFavoritos = await _context.Favorites.AnyAsync(f => f.TeamFK == id);
 
-            return NoContent();
+            if (temJogosComoCasa || temJogosComoFora || temFavoritos)
+            {
+                return BadRequest(new { Message = "Não é possível eliminar a equipa porque existem jogos ou utilizadores associados a ela." });
+            }
+
+            try
+            {
+                _context.Teams.Remove(equipa);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
         }
     }
 }
