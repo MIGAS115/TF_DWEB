@@ -1,0 +1,31 @@
+﻿@page
+@model WebApp.Pages.Matches.DetailsModel
+@{
+    ViewData["Title"] = "Detalhes do Jogo";
+}
+
+<h1>Detalhes do Jogo</h1>
+<hr />
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-secondary">Data e Hora</dt>
+            <dd class="col-sm-9 fw-bold">@Model.Match.MatchDate.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3 text-secondary">Equipa da Casa</dt>
+            <dd class="col-sm-9 text-primary fw-bold">@Html.DisplayFor(model => model.Match.HomeTeam.Name)</dd>
+
+            <dt class="col-sm-3 text-secondary">Equipa Visitante</dt>
+            <dd class="col-sm-9 text-danger fw-bold">@Html.DisplayFor(model => model.Match.AwayTeam.Name)</dd>
+
+            <dt class="col-sm-3 text-secondary">Torneio</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Match.Tournament.Name)</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <a asp-page="./Edit" asp-route-id="@Model.Match?.Id" class="btn btn-warning">Editar Jogo</a>
+    <a asp-page="./Index" class="btn btn-outline-secondary">Voltar à Listagem</a>
+</div>

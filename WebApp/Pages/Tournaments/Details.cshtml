@@ -1,0 +1,33 @@
+﻿@page
+@model WebApp.Pages.Tournaments.DetailsModel
+@{
+    ViewData["Title"] = "Detalhes do Torneio";
+}
+
+<h1>Detalhes do Torneio</h1>
+<hr />
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-secondary">
+                @Html.DisplayNameFor(model => model.Tournament.Name)
+            </dt>
+            <dd class="col-sm-9 fw-bold">
+                @Html.DisplayFor(model => model.Tournament.Name)
+            </dd>
+
+            <dt class="col-sm-3 text-secondary">
+                @Html.DisplayNameFor(model => model.Tournament.GameName)
+            </dt>
+            <dd class="col-sm-9">
+                @Html.DisplayFor(model => model.Tournament.GameName)
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <a asp-page="./Edit" asp-route-id="@Model.Tournament?.Id" class="btn btn-warning">Editar Torneio</a>
+    <a asp-page="./Index" class="btn btn-outline-secondary">Voltar à Listagem</a>
+</div>

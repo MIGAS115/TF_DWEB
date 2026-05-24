@@ -1,85 +1,43 @@
 ﻿@page
 @model WebApp.Pages.Teams.IndexModel
-
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Gestão de Equipas";
 }
 
-<h1>Index</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Equipas de E-Sports</h1>
+    <a asp-page="Create" class="btn btn-primary">Registar Nova Equipa</a>
+</div>
 
-@if (User.IsInRole("Admin"))
-{
-    <p>
-        <a asp-page="Create" class="btn btn-primary">Create New</a>
-    </p>
-}
-
-<table class="table">
-    <thead>
+<table class="table table-striped table-hover shadow-sm align-middle">
+    <thead class="table-dark">
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Team[0].Name)
-            </th>
-            <th>
-                Logo
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Team[0].IsManualOverride)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Team[0].ExternalSourceId)
-            </th>
-            <th>Ações</th>
+            <th style="width: 100px;" class="text-center">Logótipo</th>
+            <th>Nome da Equipa</th>
+            <th class="text-center">Ações</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model.Team)
         {
             <tr>
-                <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.Name)
-                </td>
-                <td class="align-middle">
+                <td class="text-center">
                     @if (!string.IsNullOrEmpty(item.LogoPath))
                     {
-                        <img src="~/images/logos/@item.LogoPath" alt="Logo da Equipa" style="max-height: 40px;" />
+                        <img src="~/images/teams/@item.LogoPath" alt="Logo @item.Name" style="max-height: 40px; max-width: 60px; object-fit: contain;" />
                     }
                     else
                     {
-                        <span class="text-muted">Sem Logo</span>
+                        <span class="badge bg-secondary">Sem Logo</span>
                     }
                 </td>
-                <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.IsManualOverride)
+                <td class="fw-bold fs-5">
+                    @Html.DisplayFor(modelItem => item.Name)
                 </td>
-                <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.ExternalSourceId)
-                </td>
-                <td class="align-middle">
-                    <div class="d-flex align-items-center gap-2">
-                    
-                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Normal"))
-                        {
-                            <form method="post" asp-page-handler="ToggleFavorite" asp-route-teamId="@item.Id" style="display:inline; margin:0;">
-                                @if (Model.UserFavoriteTeamIds.Contains(item.Id))
-                                {
-                                    <button type="submit" class="btn btn-sm btn-warning">★ Remover Favorito</button>
-                                }
-                                else
-                                {
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">☆ Adicionar Favorito</button>
-                                }
-                            </form>
-                        }
-
-                        <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Details</a>
-                    
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info">Edit</a>
-                            <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                        }
-                    </div>
+                <td class="text-center">
+                    <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a> |
+                    <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">Detalhes</a> |
+                    <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a>
                 </td>
             </tr>
         }

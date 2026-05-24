@@ -13,7 +13,6 @@ namespace ESports.Domain.Models
         [Key]
         public int Id { get; set; }
 
-        // CORREÇÃO: Adequação da string à máscara formal do Politécnico de Tomar
         [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [StringLength(100, ErrorMessage = "O {0} não pode exceder {1} caracteres.")]
         [Display(Name = "Nome do Torneio")]
@@ -39,5 +38,11 @@ namespace ESports.Domain.Models
         /// Lista de jogos integrados neste torneio.
         /// </summary>
         public ICollection<Match> MatchesList { get; set; } = [];
+
+        /// <summary>
+        /// Equipas que participam neste torneio
+        /// </summary>
+        public ICollection<TournamentTeam> TournamentTeams { get; set; } = [];
+
     }
 }
