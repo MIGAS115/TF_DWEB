@@ -26,11 +26,27 @@ namespace WebApp.Pages.Teams
         /// </summary>
         public IList<Team> Team { get; set; } = [];
 
+        /// <summary>
+        /// Lista de IDs das equipas favoritas do utilizador autenticado.
+        /// Utilizada na vista para ditar a renderização condicional do ícone/botão de favorito.
+        /// </summary>
+        public List<int> UserFavoriteTeamIds { get; set; } = [];
+
         public async Task OnGetAsync()
         {
             if (_context.Teams != null)
             {
                 Team = await _context.Teams.ToListAsync();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user != null && _context.Favorites != null)
+            {
+                UserFavoriteTeamIds = await _context.Favorites
+                    .Where(f => f.UserFK == user.Id)
+                    .Select(f => f.TeamFK)
+                    .ToListAsync();
             }
         }
 
@@ -42,14 +58,12 @@ namespace WebApp.Pages.Teams
         /// <returns>Recarrega a página atual com o estado atualizado.</returns>
         public async Task<IActionResult> OnPostToggleFavoriteAsync(int teamId)
         {
-            // 1. Resolve o utilizador atual via Identity
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge(); // Redireciona de forma segura se a sessão expirou
+                return Challenge();
             }
 
-            // 2. Validação preventiva: Verifica se a equipa ainda existe na BD
             var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
             if (!teamExists)
             {
