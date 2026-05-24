@@ -58,7 +58,7 @@ namespace WebApp.Data.Seed
                 haAdicao = true;
             }
 
-            // CORREÇÃO VISUAL: População das Equipas para preenchimento da View
+            // CORREÇÃO: População automatizada de equipas iniciais para preencher a interface do utilizador
             if (!dbContext.Teams.Any())
             {
                 var teams = new[] {
