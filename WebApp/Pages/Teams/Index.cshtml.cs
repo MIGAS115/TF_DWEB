@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -11,18 +8,13 @@ using ESports.Domain.Models;
 namespace WebApp.Pages.Teams
 {
     /// <summary>
-    /// PageModel responsável por listar todas as equipas disponíveis e processar as ações de adicionar ou remover favoritos (relação N:M) para utilizadores autenticados.
+    /// PageModel responsável pela listagem de equipas e gestão do estado de favoritos dos utilizadores.
     /// </summary>
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<MyUser> _userManager;
 
-        /// <summary>
-        /// Inicializa o PageModel injetando os serviços da base de dados e de gestão de utilizadores (Identity).
-        /// </summary>
-        /// <param name="context">Contexto da base de dados.</param>
-        /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
         public IndexModel(ApplicationDbContext context, UserManager<MyUser> userManager)
         {
             _context = context;
@@ -30,61 +22,42 @@ namespace WebApp.Pages.Teams
         }
 
         /// <summary>
-        /// Coleção de equipas a serem apresentadas na grelha de dados.
+        /// Coleção de equipas a exibir na listagem.
         /// </summary>
-        public IList<Team> Team { get; set; } = default!;
+        public IList<Team> Team { get; set; } = [];
 
-        /// <summary>
-        /// Lista que armazena os identificadores das equipas que o utilizador atual marcou como favoritas.
-        /// </summary>
-        public List<int> UserFavoriteTeamIds { get; set; } = new List<int>();
-
-        /// <summary>
-        /// Processa o pedido HTTP GET para popular a lista de equipas. 
-        /// Caso o utilizador esteja autenticado, preenche também a lista de favoritos.
-        /// </summary>
-        /// <returns>A Tarefa assíncrona da operação.</returns>
         public async Task OnGetAsync()
         {
             if (_context.Teams != null)
             {
                 Team = await _context.Teams.ToListAsync();
             }
-
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                var userId = _userManager.GetUserId(User);
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    UserFavoriteTeamIds = await _context.Favorites
-                        .Where(f => f.UserFK == userId)
-                        .Select(f => f.TeamFK)
-                        .ToListAsync();
-                }
-            }
         }
 
         /// <summary>
-        /// Processa o pedido HTTP POST para alternar o estado de favorito de uma equipa específica.
-        /// Adiciona o registo à tabela Favorites se não existir, ou remove caso já esteja presente.
+        /// Alterna o estado de favorito de uma equipa para o utilizador autenticado.
+        /// Protege o pipeline contra exceções de integridade relacional concorrentes.
         /// </summary>
-        /// <param name="teamId">A chave primária da equipa alvo.</param>
-        /// <returns>Redireciona para a própria página de Index após a alteração.</returns>
+        /// <param name="teamId">ID da equipa selecionada.</param>
+        /// <returns>Recarrega a página atual com o estado atualizado.</returns>
         public async Task<IActionResult> OnPostToggleFavoriteAsync(int teamId)
         {
-            if (User.Identity?.IsAuthenticated != true)
+            // 1. Resolve o utilizador atual via Identity
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
-                return Challenge();
+                return Challenge(); // Redireciona de forma segura se a sessão expirou
             }
 
-            var userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId))
+            // 2. Validação preventiva: Verifica se a equipa ainda existe na BD
+            var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
+            if (!teamExists)
             {
                 return NotFound();
             }
 
             var favorite = await _context.Favorites
-                .FirstOrDefaultAsync(f => f.UserFK == userId && f.TeamFK == teamId);
+                .FirstOrDefaultAsync(f => f.UserFK == user.Id && f.TeamFK == teamId);
 
             if (favorite != null)
             {
@@ -94,13 +67,24 @@ namespace WebApp.Pages.Teams
             {
                 var newFavorite = new Favorite
                 {
-                    UserFK = userId,
+                    UserFK = user.Id,
                     TeamFK = teamId
                 };
                 _context.Favorites.Add(newFavorite);
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                _context.ChangeTracker.Clear();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Erro interno ao processar a operação de favoritos.");
+            }
 
             return RedirectToPage("./Index");
         }

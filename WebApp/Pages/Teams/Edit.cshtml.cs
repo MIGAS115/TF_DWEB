@@ -130,7 +130,8 @@ namespace WebApp.Pages.Teams
                 }
                 else
                 {
-                    throw;
+                    ModelState.AddModelError(string.Empty, "A equipa foi modificada por outro utilizador. Por favor, recarregue a página.");
+                    return Page();
                 }
             }
 

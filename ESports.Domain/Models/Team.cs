@@ -14,11 +14,10 @@ public class Team
     [Key]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "O {0} é obrigatório")]
+    [Required(ErrorMessage = "O campo {0} é obrigatório.")]
     [StringLength(50, ErrorMessage = "O {0} não pode exceder {1} caracteres.")]
     [Display(Name = "Nome da Equipa")]
-    public string Name { get; set; } = string.Empty;
-
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// Caminho do ficheiro do logótipo da equipa.
@@ -40,15 +39,15 @@ public class Team
     /// <summary>
     /// Coleção de jogos efetuados em casa.
     /// </summary>
-    public ICollection<Match> HomeMatches { get; set; } = new List<Match>();
+    public ICollection<Match> HomeMatches { get; set; } = [];
 
     /// <summary>
     /// Coleção de jogos efetuados fora.
     /// </summary>
-    public ICollection<Match> AwayMatches { get; set; } = new List<Match>();
+    public ICollection<Match> AwayMatches { get; set; } = [];
 
     /// <summary>
     /// Coleção de utilizadores que marcaram esta equipa como favorita.
     /// </summary>
-    public ICollection<Favorite> FavoritedBy { get; set; } = new List<Favorite>();
+    public ICollection<Favorite> FavoritedBy { get; set; } = [];
 }
