@@ -45,7 +45,7 @@ namespace WebApp.Pages.Teams
             {
                 UserFavoriteTeamIds = await _context.Favorites
                     .Where(f => f.UserFK == user.Id)
-                    .Select(f => f.TeamFK)
+                    .Select(f => f.TeamFK) 
                     .ToListAsync();
             }
         }
@@ -61,7 +61,7 @@ namespace WebApp.Pages.Teams
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge();
+               return Challenge(); 
             }
 
             var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
