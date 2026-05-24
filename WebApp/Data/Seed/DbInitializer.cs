@@ -4,21 +4,19 @@ using Microsoft.AspNetCore.Identity;
 
 namespace WebApp.Data.Seed
 {
-    /// <summary>
-    /// Classe responsável pela população inicial (Seeding) da base de dados do projeto.
-    /// </summary>
+
     internal class DbInitializer
     {
-        /// <summary>
-        /// Alimenta as tabelas do Identity e de domínio caso estejam vazias, utilizando o padrão haAdicao para otimização de I/O.
-        /// </summary>
+
         internal static async Task InitializeAsync(ApplicationDbContext dbContext, UserManager<MyUser> userManager, RoleManager<IdentityRole> roleManager)
         {
+
             ArgumentNullException.ThrowIfNull(dbContext, nameof(dbContext));
             dbContext.Database.EnsureCreated();
 
             bool haAdicao = false;
 
+            // 1. Criar Roles (Papéis)
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
                 await roleManager.CreateAsync(new IdentityRole("Admin"));
@@ -28,6 +26,7 @@ namespace WebApp.Data.Seed
                 await roleManager.CreateAsync(new IdentityRole("Normal"));
             }
 
+            // 2. Criar Utilizador Administrador no Identity via Modelo Admin
             var defaultAdminEmail = "admin@esports.pt";
             var adminUser = await userManager.FindByEmailAsync(defaultAdminEmail);
 
@@ -42,28 +41,45 @@ namespace WebApp.Data.Seed
                     PermissionLevel = "SuperAdmin"
                 };
 
-                var result = await userManager.CreateAsync(appAdmin, "Admin_123!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(appAdmin, "Admin");
-                    haAdicao = true;
-                }
+                await userManager.CreateAsync(appAdmin, "Admin_123!");
+                await userManager.AddToRoleAsync(appAdmin, "Admin");
+                haAdicao = true;
             }
 
+            // 3. Criar Torneios Iniciais (Categorias)
             if (!dbContext.Tournaments.Any())
             {
                 var tournaments = new[] {
-                    new Tournament { Name = "IEM Katowice 2026", GameName = "CS2", IsManualOverride = true },
-                    new Tournament { Name = "Worlds 2026", GameName = "LOL", IsManualOverride = true },
-                    new Tournament { Name = "The International 2026", GameName = "DOTA2", IsManualOverride = true }
-                };
+               new Tournament { Name = "IEM Katowice 2026", GameName = "CS2", IsManualOverride = true },
+               new Tournament { Name = "Worlds 2026", GameName = "LOL", IsManualOverride = true },
+               new Tournament { Name = "The International 2026", GameName = "DOTA2", IsManualOverride = true }
+            };
                 await dbContext.Tournaments.AddRangeAsync(tournaments);
+                haAdicao = true;
+            }
+
+            // CORREÇÃO VISUAL: População das Equipas para preenchimento da View
+            if (!dbContext.Teams.Any())
+            {
+                var teams = new[] {
+                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true },
+                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true },
+                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true }
+                };
+                await dbContext.Teams.AddRangeAsync(teams);
                 haAdicao = true;
             }
 
             if (haAdicao)
             {
-                await dbContext.SaveChangesAsync();
+                try
+                {
+                    await dbContext.SaveChangesAsync();
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
     }

@@ -28,6 +28,7 @@ namespace WebApp.Pages.Teams
 
         /// <summary>
         /// Lista de IDs das equipas favoritas do utilizador autenticado.
+        /// Utilizada na vista para ditar a renderização condicional do ícone/botão de favorito.
         /// </summary>
         public List<int> UserFavoriteTeamIds { get; set; } = [];
 
@@ -60,7 +61,7 @@ namespace WebApp.Pages.Teams
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge(); 
+               return Challenge(); 
             }
 
             var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
