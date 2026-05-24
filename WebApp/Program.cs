@@ -28,6 +28,16 @@ builder.Services.AddDefaultIdentity<MyUser>(options => options.SignIn.RequireCon
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 /// <summary>
+/// Configura os serviços de estado de sessão HTTP obrigatórios da plataforma com expiração rígida.
+/// </summary>
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromSeconds(1000);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+/// <summary>
 /// Regista os serviços subjacentes ao modelo MVC com foco no pipeline das Razor Pages, 
 /// em conjunto com os componentes interativos para a renderização servidora.
 /// </summary>
@@ -44,7 +54,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
-    app.UseItToSeedSqlServer();
+    await app.SeedDataAsync();
 }
 else
 {
@@ -57,5 +67,6 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 app.MapRazorPages();
 app.Run();

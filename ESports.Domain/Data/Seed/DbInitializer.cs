@@ -76,9 +76,14 @@ internal class DbInitializer
             haAdicao = true;
         }
 
+<<<<<<< HEAD:ESports.Domain/Data/Seed/DbInitializer.cs
+            // CORREÇÃO: População automatizada de equipas iniciais para preencher a interface do utilizador
+            if (!dbContext.Teams.Any())
+=======
         if (!await dbContext.Teams.AnyAsync())
         {
             var teams = new[]
+>>>>>>> main:WebApp/Data/Seed/DbInitializer.cs
             {
                 new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true },
                 new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true },

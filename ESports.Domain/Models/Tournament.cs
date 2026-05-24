@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace ESports.Domain.Models
 {
     /// <summary>
-    /// Entidade que representa um Torneio de desportos eletrónicos.
+    /// Entidade de domínio que representa um Torneio de desportos eletrónicos.
+    /// Unifica a lógica híbrida e a segregação por jogos (CS2, LOL, DOTA2) através do atributo GameName.
     /// </summary>
     public class Tournament
     {
@@ -13,36 +15,47 @@ namespace ESports.Domain.Models
         [Key]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
-        [StringLength(100, ErrorMessage = "O {0} não pode exceder {1} caracteres.")]
+        /// <summary>
+        /// Nome oficial do torneio (ex: Blast Premier Spring 2026).
+        /// </summary>
+        [Required(ErrorMessage = "O campo {0} é de preenchimento obrigatório.")]
+        [StringLength(100, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
         [Display(Name = "Nome do Torneio")]
         public string Name { get; set; } = null!;
 
-        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
-        [StringLength(50, ErrorMessage = "O {0} não pode exceder {1} caracteres.")]
+        /// <summary>
+        /// Identificador legível do jogo associado (ex: CS2, LOL, DOTA2).
+        /// </summary>
+        [Required(ErrorMessage = "O campo {0} é de preenchimento obrigatório.")]
+        [StringLength(50, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
         [Display(Name = "Nome do Jogo")]
         public string GameName { get; set; } = null!;
 
         /// <summary>
-        /// ID de identificação da API externa.
+        /// Identificador único do registo de origem na API externa de e-sports.
         /// </summary>
-        [StringLength(100)]
+        [StringLength(100, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
+        [Display(Name = "ID Fonte Externa")]
         public string? ExternalSourceId { get; set; }
 
         /// <summary>
-        /// Controla se os dados sofreram modificação manual.
+        /// Indica se o registo foi inserido ou modificado manualmente via Administração.
         /// </summary>
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [Display(Name = "Substituição Manual")]
         public bool IsManualOverride { get; set; }
 
         /// <summary>
-        /// Lista de jogos integrados neste torneio.
+        /// Lista de jogos e partidas integrados e realizados dentro deste torneio (Relação 1:N).
         /// </summary>
+        [ValidateNever]
+        [Display(Name = "Partidas Associadas")]
         public ICollection<Match> MatchesList { get; set; } = [];
 
         /// <summary>
-        /// Equipas que participam neste torneio
+        /// Coleção de registos de junção que mapeia as equipas inscritas neste torneio (Relação M:N).
         /// </summary>
+        [ValidateNever]
         public ICollection<TournamentTeam> TournamentTeams { get; set; } = [];
-
     }
 }
