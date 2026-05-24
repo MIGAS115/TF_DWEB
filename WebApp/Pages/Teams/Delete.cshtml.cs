@@ -83,8 +83,16 @@ namespace WebApp.Pages.Teams
 
             if (hasMatches)
             {
-                Team = await _context.Teams.FirstAsync(m => m.Id == id);
+                var targetTeam = await _context.Teams.FirstOrDefaultAsync(m => m.Id == id);
+                if (targetTeam == null)
+                {
+                    return NotFound();
+                }
+
+                Team = targetTeam;
                 ErrorMessage = "Não é possível eliminar esta equipa porque já existem jogos associados (como visitada ou visitante). Elimine os jogos primeiro.";
+
+                ModelState.AddModelError(string.Empty, ErrorMessage);
                 return Page();
             }
 

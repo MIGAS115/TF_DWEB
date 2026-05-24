@@ -63,7 +63,7 @@ namespace WebApi.Controllers
                 Id = match.Id,
                 HomeTeamName = match.HomeTeam?.Name ?? "Desconhecida",
                 AwayTeamName = match.AwayTeam?.Name ?? "Desconhecida",
-                MatchDate = match.MatchDate
+                MatchDate = match.MatchDate 
             };
 
             return Ok(matchDto);

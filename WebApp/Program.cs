@@ -44,7 +44,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
-    await app.UseItToSeedSqlServerAsync();
+    app.UseItToSeedSqlServer();
 }
 else
 {
@@ -54,12 +54,8 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapRazorPages();
-
 app.Run();

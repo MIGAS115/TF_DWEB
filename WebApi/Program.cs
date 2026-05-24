@@ -40,7 +40,13 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    // Configura o Swagger para incluir os comentários XML da tua API
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "API E-Sports IPT",
+        Version = "v1",
+        Description = "API para gestão de torneios, equipas e jogos de e-sports"
+    });
+
     var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
@@ -50,10 +56,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapOpenApi();
-
 app.UseHttpsRedirection();
-
-// Na segunda secção, adicionar para começar a usar os 'cookies'
 app.UseSession();
 app.UseRouting();
 app.UseAuthentication();
