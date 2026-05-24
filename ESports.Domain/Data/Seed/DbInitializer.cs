@@ -1,86 +1,101 @@
 ﻿using ESports.Domain.Data;
 using ESports.Domain.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
-namespace WebApp.Data.Seed
+namespace WebApp.Data.Seed;
+
+/// <summary>
+/// Classe interna responsável por gerir a população (Seed) e inicialização dos dados predefinidos do sistema.
+/// </summary>
+internal class DbInitializer
 {
-
-    internal class DbInitializer
+    /// <summary>
+    /// Executa as migrações da base de dados e insere as regras, o administrador e as categorias/equipas se não existirem.
+    /// </summary>
+    /// <param name="dbContext">Contexto da base de dados da aplicação.</param>
+    /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
+    /// <param name="roleManager">Gestor de perfis/roles do ASP.NET Core Identity.</param>
+    /// <returns>Uma Task representando a operação assíncrona.</returns>
+    internal static async Task InitializeAsync(
+        ApplicationDbContext dbContext,
+        UserManager<MyUser> userManager,
+        RoleManager<IdentityRole> roleManager)
     {
+        ArgumentNullException.ThrowIfNull(dbContext, nameof(dbContext));
+        ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
+        ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
 
-        internal static async Task InitializeAsync(ApplicationDbContext dbContext, UserManager<MyUser> userManager, RoleManager<IdentityRole> roleManager)
+        if (dbContext.Database.GetPendingMigrations().Any())
         {
+            await dbContext.Database.MigrateAsync();
+        }
 
-            ArgumentNullException.ThrowIfNull(dbContext, nameof(dbContext));
-            dbContext.Database.EnsureCreated();
+        bool haAdicao = false;
 
-            bool haAdicao = false;
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+        if (!await roleManager.RoleExistsAsync("Normal"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Normal"));
+        }
 
-            // 1. Criar Roles (Papéis)
-            if (!await roleManager.RoleExistsAsync("Admin"))
+        var defaultAdminEmail = "admin@esports.pt";
+        var adminUser = await userManager.FindByEmailAsync(defaultAdminEmail);
+
+        if (adminUser == null)
+        {
+            var appAdmin = new Admin
             {
-                await roleManager.CreateAsync(new IdentityRole("Admin"));
-            }
-            if (!await roleManager.RoleExistsAsync("Normal"))
+                UserName = defaultAdminEmail,
+                Email = defaultAdminEmail,
+                FullName = "Administrador Master",
+                EmailConfirmed = true,
+                PermissionLevel = "SuperAdmin"
+            };
+
+            var result = await userManager.CreateAsync(appAdmin, "Admin_123!");
+            if (result.Succeeded)
             {
-                await roleManager.CreateAsync(new IdentityRole("Normal"));
-            }
-
-            // 2. Criar Utilizador Administrador no Identity via Modelo Admin
-            var defaultAdminEmail = "admin@esports.pt";
-            var adminUser = await userManager.FindByEmailAsync(defaultAdminEmail);
-
-            if (adminUser == null)
-            {
-                var appAdmin = new Admin
-                {
-                    UserName = defaultAdminEmail,
-                    Email = defaultAdminEmail,
-                    FullName = "Administrador Master",
-                    EmailConfirmed = true,
-                    PermissionLevel = "SuperAdmin"
-                };
-
-                await userManager.CreateAsync(appAdmin, "Admin_123!");
                 await userManager.AddToRoleAsync(appAdmin, "Admin");
                 haAdicao = true;
             }
+        }
 
-            // 3. Criar Torneios Iniciais (Categorias)
-            if (!dbContext.Tournaments.Any())
+        if (!await dbContext.Tournaments.AnyAsync())
+        {
+            var tournaments = new[]
             {
-                var tournaments = new[] {
-               new Tournament { Name = "IEM Katowice 2026", GameName = "CS2", IsManualOverride = true },
-               new Tournament { Name = "Worlds 2026", GameName = "LOL", IsManualOverride = true },
-               new Tournament { Name = "The International 2026", GameName = "DOTA2", IsManualOverride = true }
+                new Tournament { Name = "IEM Katowice 2026", GameName = "CS2", IsManualOverride = true },
+                new Tournament { Name = "Worlds 2026", GameName = "LOL", IsManualOverride = true },
+                new Tournament { Name = "The International 2026", GameName = "DOTA2", IsManualOverride = true }
             };
-                await dbContext.Tournaments.AddRangeAsync(tournaments);
-                haAdicao = true;
-            }
+            await dbContext.Tournaments.AddRangeAsync(tournaments);
+            haAdicao = true;
+        }
 
+<<<<<<< HEAD:ESports.Domain/Data/Seed/DbInitializer.cs
             // CORREÇÃO: População automatizada de equipas iniciais para preencher a interface do utilizador
             if (!dbContext.Teams.Any())
+=======
+        if (!await dbContext.Teams.AnyAsync())
+        {
+            var teams = new[]
+>>>>>>> main:WebApp/Data/Seed/DbInitializer.cs
             {
-                var teams = new[] {
-                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true },
-                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true },
-                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true }
-                };
-                await dbContext.Teams.AddRangeAsync(teams);
-                haAdicao = true;
-            }
+                new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true },
+                new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true },
+                new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true }
+            };
+            await dbContext.Teams.AddRangeAsync(teams);
+            haAdicao = true;
+        }
 
-            if (haAdicao)
-            {
-                try
-                {
-                    await dbContext.SaveChangesAsync();
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-            }
+        if (haAdicao)
+        {
+            await dbContext.SaveChangesAsync();
         }
     }
 }
