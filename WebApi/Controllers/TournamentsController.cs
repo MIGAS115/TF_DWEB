@@ -2,13 +2,6 @@
 using ESports.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using WebApi.Models.ViewModels;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using ESports.Domain.Data;
-using ESports.Domain.Models;
 using WebApi.Models.ViewModels;
 
 namespace WebApi.Controllers;

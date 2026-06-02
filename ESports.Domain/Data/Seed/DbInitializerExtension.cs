@@ -3,33 +3,41 @@ using ESports.Domain.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace WebApp.Data.Seed
+namespace WebApp.Data.Seed;
+
+/// <summary>
+/// Classe de extensão para expor a inicialização do Seed no pipeline do Program.cs de forma síncrona.
+/// </summary>
+public static class DbInitializerExtension
 {
     /// <summary>
-    /// Fornece métodos de extensão para encapsular e injetar a inicialização da base de dados no pipeline da aplicação.
+    /// Cria o escopo de injeção de dependências e invoca a população da base de dados.
     /// </summary>
-    public static class DbInitializerExtension
+    /// <param name="app">Interface do construtor de aplicações web.</param>
+    /// <returns>O IApplicationBuilder configurado para encadeamento de chamadas.</returns>
+    public static IApplicationBuilder UseItToSeedSqlServer(this IApplicationBuilder app)
     {
-        /// <summary>
-        /// Cria o escopo isolado de IoC e invoca o motor de população inicial de dados de forma assíncrona.
-        /// </summary>
-        /// <param name="app">O construtor do pipeline de componentes da aplicação.</param>
-        /// <returns>O mesmo builder da aplicação para encadeamento de métodos.</returns>
-        public static async Task<IApplicationBuilder> SeedDataAsync(this IApplicationBuilder app)
+        ArgumentNullException.ThrowIfNull(app, nameof(app));
+
+        using var scope = app.ApplicationServices.CreateScope();
+        var services = scope.ServiceProvider;
+
+        try
         {
-            ArgumentNullException.ThrowIfNull(app, nameof(app));
-
-            using var scope = app.ApplicationServices.CreateScope();
-            var services = scope.ServiceProvider;
-
-            var dbContext = services.GetRequiredService<ApplicationDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var userManager = services.GetRequiredService<UserManager<MyUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-            await DbInitializer.InitializeAsync(dbContext, userManager, roleManager);
-
-            return app;
+            DbInitializer.InitializeAsync(context, userManager, roleManager).GetAwaiter().GetResult();
         }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<DbInitializer>>();
+            logger.LogError(ex, "Erro fatal ao inicializar e alimentar a base de dados SQL Server no pipeline.");
+        }
+
+        return app;
     }
 }

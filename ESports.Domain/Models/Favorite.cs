@@ -7,9 +7,10 @@ namespace ESports.Domain.Models
 {
     /// <summary>
     /// Classe de associação (tabela pivot) que modela o relacionamento Muitos-para-Muitos (N:M) 
-    /// entre Utilizadores do tipo Normal e as suas Equipas favoritas (Tabela Favoritos).
+    /// entre Utilizadores do tipo Normal e as suas Equipas favoritas.
     /// </summary>
-    [PrimaryKey(nameof(UtilizadorNormalFK), nameof(EquipaFK))]
+    [Table("Favoritos")]
+    [PrimaryKey(nameof(NormalFK), nameof(TeamFK))]
     public class Favorite
     {
         /// <summary>
@@ -18,13 +19,13 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Normal))]
         [Display(Name = "Identificador do Utilizador")]
-        public int UtilizadorNormalFK { get; set; }
+        public int NormalFK { get; set; }
 
         /// <summary>
         /// Propriedade de navegação para a entidade do Utilizador Normal associado.
         /// </summary>
         [ValidateNever]
-        public Normal Normal { get; set; } = null!;
+        public RegularUser Normal { get; set; } = null!;
 
         /// <summary>
         /// Chave estrangeira e parte da chave primária composta que aponta para a Equipa.
@@ -32,7 +33,7 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Team))]
         [Display(Name = "Identificador da Equipa")]
-        public int EquipaFK { get; set; }
+        public int TeamFK { get; set; }
 
         /// <summary>
         /// Propriedade de navegação para a entidade da Equipa associada.
