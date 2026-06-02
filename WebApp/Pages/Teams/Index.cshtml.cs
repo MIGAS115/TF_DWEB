@@ -43,10 +43,16 @@ namespace WebApp.Pages.Teams
 
             if (user != null && _context.Favorites != null)
             {
-                UserFavoriteTeamIds = await _context.Favorites
-                    .Where(f => f.UserFK == user.Id)
-                    .Select(f => f.TeamFK) 
-                    .ToListAsync();
+                var perfilNormal = await _context.RegularUsers
+                    .FirstOrDefaultAsync(n => n.MyUserFK == user.Id);
+
+                if (perfilNormal != null)
+                {
+                    UserFavoriteTeamIds = await _context.Favorites
+                        .Where(f => f.NormalFK == perfilNormal.Id)
+                        .Select(f => f.TeamFK)
+                        .ToListAsync();
+                }
             }
         }
 
@@ -61,7 +67,7 @@ namespace WebApp.Pages.Teams
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-               return Challenge(); 
+                return Challenge();
             }
 
             var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
@@ -70,8 +76,16 @@ namespace WebApp.Pages.Teams
                 return NotFound();
             }
 
+            var perfilNormal = await _context.RegularUsers
+                .FirstOrDefaultAsync(n => n.MyUserFK == user.Id);
+
+            if (perfilNormal == null)
+            {
+                return BadRequest("Perfil de utilizador não configurado no sistema.");
+            }
+
             var favorite = await _context.Favorites
-                .FirstOrDefaultAsync(f => f.UserFK == user.Id && f.TeamFK == teamId);
+                .FirstOrDefaultAsync(f => f.NormalFK == perfilNormal.Id && f.TeamFK == teamId);
 
             if (favorite != null)
             {
@@ -81,7 +95,7 @@ namespace WebApp.Pages.Teams
             {
                 var newFavorite = new Favorite
                 {
-                    UserFK = user.Id,
+                    NormalFK = perfilNormal.Id,
                     TeamFK = teamId
                 };
                 _context.Favorites.Add(newFavorite);

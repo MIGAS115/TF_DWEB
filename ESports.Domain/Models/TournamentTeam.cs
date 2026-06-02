@@ -7,9 +7,10 @@ namespace ESports.Domain.Models
 {
     /// <summary>
     /// Classe de associação (tabela pivot) que modela o relacionamento Muitos-para-Muitos (N:M) 
-    /// entre as entidades Torneio e Equipa (Tabela TorneioEquipa).
+    /// entre as entidades Torneio e Equipa.
     /// </summary>
-    [PrimaryKey(nameof(TorneioFK), nameof(EquipaFK))]
+    [Table("TorneioEquipa")]
+    [PrimaryKey(nameof(TournamentFK), nameof(TeamFK))]
     public class TournamentTeam
     {
         /// <summary>
@@ -18,7 +19,7 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Tournament))]
         [Display(Name = "Identificador do Torneio")]
-        public int TorneioFK { get; set; }
+        public int TournamentFK { get; set; }
 
         /// <summary>
         /// Propriedade de navegação para o objeto Torneio associado.
@@ -32,7 +33,7 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Team))]
         [Display(Name = "Identificador da Equipa")]
-        public int EquipaFK { get; set; }
+        public int TeamFK { get; set; }
 
         /// <summary>
         /// Propriedade de navegação para o objeto Equipa associado.
