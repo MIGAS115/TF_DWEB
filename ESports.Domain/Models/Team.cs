@@ -73,5 +73,10 @@ namespace ESports.Domain.Models
         [ValidateNever]
         [InverseProperty(nameof(Match.AwayTeam))]
         public ICollection<Match> AwayMatches { get; set; } = [];
+
+        /// <summary>
+        /// Coleção de favoritos associados à equipa (Relação N:N).
+        /// </summary>
+        public ICollection<Favorite> FavoritedBy { get; set; } = [];
     }
 }

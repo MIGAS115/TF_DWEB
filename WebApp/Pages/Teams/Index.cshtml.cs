@@ -16,8 +16,10 @@ namespace WebApp.Pages.Teams
         private readonly UserManager<MyUser> _userManager;
 
         /// <summary>
-        /// Inicializa uma nova instância da classe <see cref="IndexModel"/>.
+        /// Inicializa uma nova instância da classe <see cref="IndexModel"/> com injeção de dependências.
         /// </summary>
+        /// <param name="context">O contexto da base de dados global.</param>
+        /// <param name="userManager">O gestor de identidades de utilizadores do ASP.NET Identity.</param>
         public IndexModel(ApplicationDbContext context, UserManager<MyUser> userManager)
         {
             _context = context;
@@ -25,9 +27,9 @@ namespace WebApp.Pages.Teams
         }
 
         /// <summary>
-        /// Coleção de equipas a exibir na listagem.
+        /// Coleção de equipas a exibir na listagem. Pluralizada para evitar conflitos de tipo e escopo no motor Razor.
         /// </summary>
-        public IList<Team> Team { get; set; } = [];
+        public IList<Team> Teams { get; set; } = [];
 
         /// <summary>
         /// Lista de IDs das equipas favoritas do utilizador autenticado.
@@ -36,13 +38,14 @@ namespace WebApp.Pages.Teams
         public List<int> UserFavoriteTeamIds { get; set; } = [];
 
         /// <summary>
-        /// Executa a paginação e carregamento assíncrono das equipas e favoritos do utilizador.
+        /// Executa o carregamento assíncrono das equipas registadas e mapeia os favoritos do utilizador logado.
         /// </summary>
         public async Task OnGetAsync()
         {
             if (_context.Teams != null)
             {
-                Team = await _context.Teams.ToListAsync();
+                // Carrega a listagem completa para a propriedade pluralizada Teams
+                Teams = await _context.Teams.ToListAsync();
             }
 
             // Obtém o utilizador atualmente autenticado (que é do tipo MyUser)
@@ -62,7 +65,7 @@ namespace WebApp.Pages.Teams
         /// Protege o pipeline contra exceções de integridade relacional concorrentes.
         /// </summary>
         /// <param name="teamId">ID da equipa selecionada.</param>
-        /// <returns>Recarrega a página atual com o estado updated.</returns>
+        /// <returns>Recarrega a página atual com o estado atualizado.</returns>
         public async Task<IActionResult> OnPostToggleFavoriteAsync(int teamId)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -77,15 +80,16 @@ namespace WebApp.Pages.Teams
                 return NotFound();
             }
 
-            // Verificar se o utilizador atual existe na tabela de utilizadores regular
+            // Verifica se o utilizador atual existe na tabela de utilizadores regulares
             var isRegularUser = await _context.RegularUsers.AnyAsync(n => n.Id == user.Id);
 
             if (!isRegularUser)
             {
+                // Resposta de validação controlada que impede operações de favoritos para perfis administrativos
                 return BadRequest("Perfil de utilizador não configurado ou o utilizador atual é um Administrador.");
             }
 
-            // Procur o favorito usando diretamente o ID do utilizador autenticado
+            // Procura o favorito usando diretamente o ID do utilizador autenticado
             var favorite = await _context.Favorites
                 .FirstOrDefaultAsync(f => f.NormalFK == user.Id && f.TeamFK == teamId);
 
@@ -113,7 +117,8 @@ namespace WebApp.Pages.Teams
             }
             catch (Exception)
             {
-                return StatusCode(500, "Erro interno ao processar a operação de favoritos.");
+                // Tratamento de segurança que encapsula falhas internas sem expor dados sensíveis da infraestrutura
+                return StatusCode(500, "Ocorreu um erro interno ao processar a operação de favoritos.");
             }
 
             return RedirectToPage("./Index");

@@ -71,9 +71,11 @@ namespace ESports.Domain.Models
 
         /// <summary>
         /// Propriedade de navegação para os detalhes da equipa visitada (casa).
+        /// Define explicitamente a ausência de ação em cascata para mitigar ciclos relacionais.
         /// </summary>
         [ValidateNever]
         [InverseProperty(nameof(Team.HomeMatches))]
+        [DeleteBehavior(DeleteBehavior.NoAction)]
         public Team HomeTeam { get; set; } = null!;
 
         /// <summary>
@@ -86,9 +88,11 @@ namespace ESports.Domain.Models
 
         /// <summary>
         /// Propriedade de navegação para os detalhes da equipa visitante (fora).
+        /// Define explicitamente a ausência de ação em cascata para mitigar ciclos relacionais.
         /// </summary>
         [ValidateNever]
         [InverseProperty(nameof(Team.AwayMatches))]
+        [DeleteBehavior(DeleteBehavior.NoAction)]
         public Team AwayTeam { get; set; } = null!;
 
         /// <summary>

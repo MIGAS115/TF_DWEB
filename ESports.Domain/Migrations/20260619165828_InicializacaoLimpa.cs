@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ESports.Domain.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InicializacaoLimpa : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,7 +30,10 @@ namespace ESports.Domain.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
+                    PermissionLevel = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RegistrationDate = table.Column<DateOnly>(type: "date", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -52,18 +55,32 @@ namespace ESports.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Teams",
+                name: "Categories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false),
-                    ExternalSourceId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Teams", x => x.Id);
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tournaments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    GameName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tournaments", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -173,6 +190,53 @@ namespace ESports.Domain.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Teams",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CategoryFK = table.Column<int>(type: "int", nullable: false),
+                    LogoPath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teams", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Teams_Categories_CategoryFK",
+                        column: x => x.CategoryFK,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Favoritos",
+                columns: table => new
+                {
+                    NormalFK = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TeamFK = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Favoritos", x => new { x.NormalFK, x.TeamFK });
+                    table.ForeignKey(
+                        name: "FK_Favoritos_AspNetUsers_NormalFK",
+                        column: x => x.NormalFK,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Favoritos_Teams_TeamFK",
+                        column: x => x.TeamFK,
+                        principalTable: "Teams",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Matches",
                 columns: table => new
                 {
@@ -181,10 +245,12 @@ namespace ESports.Domain.Migrations
                     MatchDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     HomeScore = table.Column<int>(type: "int", nullable: true),
                     AwayScore = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     IsManualOverride = table.Column<bool>(type: "bit", nullable: false),
-                    ExternalSourceId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     HomeTeamFK = table.Column<int>(type: "int", nullable: false),
-                    AwayTeamFK = table.Column<int>(type: "int", nullable: false)
+                    AwayTeamFK = table.Column<int>(type: "int", nullable: false),
+                    TournamentFK = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -193,37 +259,40 @@ namespace ESports.Domain.Migrations
                         name: "FK_Matches_Teams_AwayTeamFK",
                         column: x => x.AwayTeamFK,
                         principalTable: "Teams",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Matches_Teams_HomeTeamFK",
                         column: x => x.HomeTeamFK,
                         principalTable: "Teams",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Matches_Tournaments_TournamentFK",
+                        column: x => x.TournamentFK,
+                        principalTable: "Tournaments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserFavoriteTeams",
+                name: "TorneioEquipa",
                 columns: table => new
                 {
-                    MyUserFK = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TeamFK = table.Column<int>(type: "int", nullable: false),
-                    AddedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TournamentFK = table.Column<int>(type: "int", nullable: false),
+                    TeamFK = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserFavoriteTeams", x => new { x.MyUserFK, x.TeamFK });
+                    table.PrimaryKey("PK_TorneioEquipa", x => new { x.TournamentFK, x.TeamFK });
                     table.ForeignKey(
-                        name: "FK_UserFavoriteTeams_AspNetUsers_MyUserFK",
-                        column: x => x.MyUserFK,
-                        principalTable: "AspNetUsers",
+                        name: "FK_TorneioEquipa_Teams_TeamFK",
+                        column: x => x.TeamFK,
+                        principalTable: "Teams",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserFavoriteTeams_Teams_TeamFK",
-                        column: x => x.TeamFK,
-                        principalTable: "Teams",
+                        name: "FK_TorneioEquipa_Tournaments_TournamentFK",
+                        column: x => x.TournamentFK,
+                        principalTable: "Tournaments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -268,6 +337,11 @@ namespace ESports.Domain.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Favoritos_TeamFK",
+                table: "Favoritos",
+                column: "TeamFK");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Matches_AwayTeamFK",
                 table: "Matches",
                 column: "AwayTeamFK");
@@ -278,8 +352,18 @@ namespace ESports.Domain.Migrations
                 column: "HomeTeamFK");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserFavoriteTeams_TeamFK",
-                table: "UserFavoriteTeams",
+                name: "IX_Matches_TournamentFK",
+                table: "Matches",
+                column: "TournamentFK");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Teams_CategoryFK",
+                table: "Teams",
+                column: "CategoryFK");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TorneioEquipa_TeamFK",
+                table: "TorneioEquipa",
                 column: "TeamFK");
         }
 
@@ -302,10 +386,13 @@ namespace ESports.Domain.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "Favoritos");
+
+            migrationBuilder.DropTable(
                 name: "Matches");
 
             migrationBuilder.DropTable(
-                name: "UserFavoriteTeams");
+                name: "TorneioEquipa");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -315,6 +402,12 @@ namespace ESports.Domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "Teams");
+
+            migrationBuilder.DropTable(
+                name: "Tournaments");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
         }
     }
 }
