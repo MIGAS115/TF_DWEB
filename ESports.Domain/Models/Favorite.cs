@@ -15,11 +15,12 @@ namespace ESports.Domain.Models
     {
         /// <summary>
         /// Chave estrangeira e parte da chave primária composta que aponta para o Utilizador Normal.
+        /// Alterado para string para refletir a herança do Identity Framework.
         /// </summary>
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Normal))]
         [Display(Name = "Identificador do Utilizador")]
-        public int NormalFK { get; set; }
+        public string NormalFK { get; set; } = null!;
 
         /// <summary>
         /// Propriedade de navegação para a entidade do Utilizador Normal associado.

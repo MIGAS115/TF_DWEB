@@ -15,6 +15,9 @@ namespace WebApp.Pages.Teams
         private readonly ApplicationDbContext _context;
         private readonly UserManager<MyUser> _userManager;
 
+        /// <summary>
+        /// Inicializa uma nova instância da classe <see cref="IndexModel"/>.
+        /// </summary>
         public IndexModel(ApplicationDbContext context, UserManager<MyUser> userManager)
         {
             _context = context;
@@ -32,6 +35,9 @@ namespace WebApp.Pages.Teams
         /// </summary>
         public List<int> UserFavoriteTeamIds { get; set; } = [];
 
+        /// <summary>
+        /// Executa a paginação e carregamento assíncrono das equipas e favoritos do utilizador.
+        /// </summary>
         public async Task OnGetAsync()
         {
             if (_context.Teams != null)
@@ -39,20 +45,15 @@ namespace WebApp.Pages.Teams
                 Team = await _context.Teams.ToListAsync();
             }
 
+            // Obtém o utilizador atualmente autenticado (que é do tipo MyUser)
             var user = await _userManager.GetUserAsync(User);
 
             if (user != null && _context.Favorites != null)
             {
-                var perfilNormal = await _context.RegularUsers
-                    .FirstOrDefaultAsync(n => n.MyUserFK == user.Id);
-
-                if (perfilNormal != null)
-                {
-                    UserFavoriteTeamIds = await _context.Favorites
-                        .Where(f => f.NormalFK == perfilNormal.Id)
-                        .Select(f => f.TeamFK)
-                        .ToListAsync();
-                }
+                UserFavoriteTeamIds = await _context.Favorites
+                    .Where(f => f.NormalFK == user.Id)
+                    .Select(f => f.TeamFK)
+                    .ToListAsync();
             }
         }
 
@@ -61,7 +62,7 @@ namespace WebApp.Pages.Teams
         /// Protege o pipeline contra exceções de integridade relacional concorrentes.
         /// </summary>
         /// <param name="teamId">ID da equipa selecionada.</param>
-        /// <returns>Recarrega a página atual com o estado atualizado.</returns>
+        /// <returns>Recarrega a página atual com o estado updated.</returns>
         public async Task<IActionResult> OnPostToggleFavoriteAsync(int teamId)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -76,16 +77,17 @@ namespace WebApp.Pages.Teams
                 return NotFound();
             }
 
-            var perfilNormal = await _context.RegularUsers
-                .FirstOrDefaultAsync(n => n.MyUserFK == user.Id);
+            // Verificar se o utilizador atual existe na tabela de utilizadores regular
+            var isRegularUser = await _context.RegularUsers.AnyAsync(n => n.Id == user.Id);
 
-            if (perfilNormal == null)
+            if (!isRegularUser)
             {
-                return BadRequest("Perfil de utilizador não configurado no sistema.");
+                return BadRequest("Perfil de utilizador não configurado ou o utilizador atual é um Administrador.");
             }
 
+            // Procur o favorito usando diretamente o ID do utilizador autenticado
             var favorite = await _context.Favorites
-                .FirstOrDefaultAsync(f => f.NormalFK == perfilNormal.Id && f.TeamFK == teamId);
+                .FirstOrDefaultAsync(f => f.NormalFK == user.Id && f.TeamFK == teamId);
 
             if (favorite != null)
             {
@@ -95,7 +97,7 @@ namespace WebApp.Pages.Teams
             {
                 var newFavorite = new Favorite
                 {
-                    NormalFK = perfilNormal.Id,
+                    NormalFK = user.Id,
                     TeamFK = teamId
                 };
                 _context.Favorites.Add(newFavorite);
