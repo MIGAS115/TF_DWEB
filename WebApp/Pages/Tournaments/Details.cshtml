@@ -13,6 +13,12 @@
             <dt class="col-sm-3 text-secondary">
                 @Html.DisplayNameFor(model => model.Tournament.Name)
             </dt>
+            <dt class="col-sm-3 text-secondary">
+                @Html.DisplayNameFor(model => model.Tournament.PrizePool)
+            </dt>
+            <dd class="col-sm-9 fw-bold text-success">
+                @Model.Tournament.PrizePool.ToString("C", new System.Globalization.CultureInfo("pt-PT"))
+            </dd>
             <dd class="col-sm-9 fw-bold">
                 @Html.DisplayFor(model => model.Tournament.Name)
             </dd>

@@ -12,32 +12,50 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ESports.Domain.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260523170114_AdicionadoTournamentFK")]
-    partial class AdicionadoTournamentFK
+    [Migration("20260619165828_InicializacaoLimpa")]
+    partial class InicializacaoLimpa
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ESports.Domain.Models.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("ESports.Domain.Models.Favorite", b =>
                 {
-                    b.Property<string>("UserFK")
+                    b.Property<string>("NormalFK")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("TeamFK")
                         .HasColumnType("int");
 
-                    b.HasKey("UserFK", "TeamFK");
+                    b.HasKey("NormalFK", "TeamFK");
 
                     b.HasIndex("TeamFK");
 
-                    b.ToTable("Favorites");
+                    b.ToTable("Favoritos");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Match", b =>
@@ -55,7 +73,8 @@ namespace ESports.Domain.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ExternalSourceId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("HomeScore")
                         .HasColumnType("int");
@@ -68,6 +87,11 @@ namespace ESports.Domain.Migrations
 
                     b.Property<DateTime>("MatchDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TournamentFK")
                         .HasColumnType("int");
@@ -97,8 +121,8 @@ namespace ESports.Domain.Migrations
 
                     b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -109,7 +133,8 @@ namespace ESports.Domain.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -169,8 +194,12 @@ namespace ESports.Domain.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CategoryFK")
+                        .HasColumnType("int");
+
                     b.Property<string>("ExternalSourceId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsManualOverride")
                         .HasColumnType("bit");
@@ -185,6 +214,8 @@ namespace ESports.Domain.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryFK");
 
                     b.ToTable("Teams");
                 });
@@ -231,7 +262,7 @@ namespace ESports.Domain.Migrations
 
                     b.HasIndex("TeamFK");
 
-                    b.ToTable("TournamentTeams");
+                    b.ToTable("TorneioEquipa");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -383,27 +414,27 @@ namespace ESports.Domain.Migrations
                     b.HasDiscriminator().HasValue("Admin");
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.Normal", b =>
+            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
                 {
                     b.HasBaseType("ESports.Domain.Models.MyUser");
 
                     b.Property<DateOnly>("RegistrationDate")
                         .HasColumnType("date");
 
-                    b.HasDiscriminator().HasValue("Normal");
+                    b.HasDiscriminator().HasValue("RegularUser");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Favorite", b =>
                 {
-                    b.HasOne("ESports.Domain.Models.Team", "Team")
-                        .WithMany("FavoritedBy")
-                        .HasForeignKey("TeamFK")
+                    b.HasOne("ESports.Domain.Models.RegularUser", "Normal")
+                        .WithMany("FavoritesList")
+                        .HasForeignKey("NormalFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ESports.Domain.Models.Normal", "Normal")
-                        .WithMany("FavoritesList")
-                        .HasForeignKey("UserFK")
+                    b.HasOne("ESports.Domain.Models.Team", "Team")
+                        .WithMany("FavoritedBy")
+                        .HasForeignKey("TeamFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -417,13 +448,13 @@ namespace ESports.Domain.Migrations
                     b.HasOne("ESports.Domain.Models.Team", "AwayTeam")
                         .WithMany("AwayMatches")
                         .HasForeignKey("AwayTeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Team", "HomeTeam")
                         .WithMany("HomeMatches")
                         .HasForeignKey("HomeTeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Tournament", "Tournament")
@@ -439,6 +470,17 @@ namespace ESports.Domain.Migrations
                     b.Navigation("Tournament");
                 });
 
+            modelBuilder.Entity("ESports.Domain.Models.Team", b =>
+                {
+                    b.HasOne("ESports.Domain.Models.Category", "Category")
+                        .WithMany("TeamsList")
+                        .HasForeignKey("CategoryFK")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("ESports.Domain.Models.TournamentTeam", b =>
                 {
                     b.HasOne("ESports.Domain.Models.Team", "Team")
@@ -448,7 +490,7 @@ namespace ESports.Domain.Migrations
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Tournament", "Tournament")
-                        .WithMany()
+                        .WithMany("TournamentTeams")
                         .HasForeignKey("TournamentFK")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -509,6 +551,11 @@ namespace ESports.Domain.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ESports.Domain.Models.Category", b =>
+                {
+                    b.Navigation("TeamsList");
+                });
+
             modelBuilder.Entity("ESports.Domain.Models.Team", b =>
                 {
                     b.Navigation("AwayMatches");
@@ -521,9 +568,11 @@ namespace ESports.Domain.Migrations
             modelBuilder.Entity("ESports.Domain.Models.Tournament", b =>
                 {
                     b.Navigation("MatchesList");
+
+                    b.Navigation("TournamentTeams");
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.Normal", b =>
+            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
                 {
                     b.Navigation("FavoritesList");
                 });

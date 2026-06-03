@@ -27,13 +27,13 @@
                     @item.MatchDate.ToString("dd/MM/yyyy HH:mm")
                 </td>
                 <td class="align-middle fw-bold text-primary">
-                    @Html.DisplayFor(modelItem => item.HomeTeam.Name)
+                    @item.HomeTeam?.Name
                 </td>
                 <td class="align-middle fw-bold text-danger">
-                    @Html.DisplayFor(modelItem => item.AwayTeam.Name)
+                    @item.AwayTeam?.Name
                 </td>
                 <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.Tournament.Name)
+                    @item.Tournament?.Name
                 </td>
                 <td class="text-center align-middle">
                     <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a> |

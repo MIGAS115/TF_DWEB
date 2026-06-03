@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ESports.Domain.Models
 {
@@ -44,6 +46,23 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [Display(Name = "Substituição Manual")]
         public bool IsManualOverride { get; set; }
+
+        /// <summary>
+        /// Valor real do prémio total do torneio, guardado na base de dados.
+        /// </summary>
+        [Precision(18, 2)]
+        [Display(Name = "Prémio Total")]
+        public decimal PrizePool { get; set; }
+
+        /// <summary>
+        /// Propriedade auxiliar para capturar o input do formulário em formato de texto (suporta ponto e vírgula).
+        /// </summary>
+        [NotMapped]
+        [Required(ErrorMessage = "O campo {0} é de preenchimento obrigatório.")]
+        [StringLength(10, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
+        [RegularExpression(@"[0-9]{1,7}([,.][0-9]{1,2})?", ErrorMessage = "O {0} deve ser um número válido com até 2 casas decimais.")]
+        [Display(Name = "Prémio Total")]
+        public string PrizePoolAux { get; set; } = "";
 
         /// <summary>
         /// Lista de jogos e partidas integrados e realizados dentro deste torneio (Relação 1:N).

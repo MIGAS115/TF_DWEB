@@ -22,7 +22,7 @@ namespace ESports.Domain.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ESports.Domain.Models.Admin", b =>
+            modelBuilder.Entity("ESports.Domain.Models.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,26 +30,20 @@ namespace ESports.Domain.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("MyUserFK")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("PermissionLevel")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MyUserFK");
-
-                    b.ToTable("Admins");
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Favorite", b =>
                 {
-                    b.Property<int>("NormalFK")
-                        .HasColumnType("int");
+                    b.Property<string>("NormalFK")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("TeamFK")
                         .HasColumnType("int");
@@ -110,26 +104,83 @@ namespace ESports.Domain.Migrations
                     b.ToTable("Matches");
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
+            modelBuilder.Entity("ESports.Domain.Models.MyUser", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("MyUserFK")
-                        .IsRequired()
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateOnly>("RegistrationDate")
-                        .HasColumnType("date");
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MyUserFK");
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
 
-                    b.ToTable("RegularUsers");
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("MyUser");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Team", b =>
@@ -139,6 +190,9 @@ namespace ESports.Domain.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoryFK")
+                        .HasColumnType("int");
 
                     b.Property<string>("ExternalSourceId")
                         .HasMaxLength(100)
@@ -157,6 +211,8 @@ namespace ESports.Domain.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryFK");
 
                     b.ToTable("Teams");
                 });
@@ -258,80 +314,6 @@ namespace ESports.Domain.Migrations
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -417,26 +399,26 @@ namespace ESports.Domain.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.MyUser", b =>
-                {
-                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasDiscriminator().HasValue("MyUser");
-                });
-
             modelBuilder.Entity("ESports.Domain.Models.Admin", b =>
                 {
-                    b.HasOne("ESports.Domain.Models.MyUser", "MyUser")
-                        .WithMany()
-                        .HasForeignKey("MyUserFK")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasBaseType("ESports.Domain.Models.MyUser");
 
-                    b.Navigation("MyUser");
+                    b.Property<string>("PermissionLevel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasDiscriminator().HasValue("Admin");
+                });
+
+            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
+                {
+                    b.HasBaseType("ESports.Domain.Models.MyUser");
+
+                    b.Property<DateOnly>("RegistrationDate")
+                        .HasColumnType("date");
+
+                    b.HasDiscriminator().HasValue("RegularUser");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Favorite", b =>
@@ -444,13 +426,13 @@ namespace ESports.Domain.Migrations
                     b.HasOne("ESports.Domain.Models.RegularUser", "Normal")
                         .WithMany("FavoritesList")
                         .HasForeignKey("NormalFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Team", "Team")
                         .WithMany("FavoritedBy")
                         .HasForeignKey("TeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Normal");
@@ -463,19 +445,19 @@ namespace ESports.Domain.Migrations
                     b.HasOne("ESports.Domain.Models.Team", "AwayTeam")
                         .WithMany("AwayMatches")
                         .HasForeignKey("AwayTeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Team", "HomeTeam")
                         .WithMany("HomeMatches")
                         .HasForeignKey("HomeTeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Tournament", "Tournament")
                         .WithMany("MatchesList")
                         .HasForeignKey("TournamentFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AwayTeam");
@@ -485,15 +467,15 @@ namespace ESports.Domain.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
+            modelBuilder.Entity("ESports.Domain.Models.Team", b =>
                 {
-                    b.HasOne("ESports.Domain.Models.MyUser", "MyUser")
-                        .WithMany()
-                        .HasForeignKey("MyUserFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("ESports.Domain.Models.Category", "Category")
+                        .WithMany("TeamsList")
+                        .HasForeignKey("CategoryFK")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("MyUser");
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.TournamentTeam", b =>
@@ -501,13 +483,13 @@ namespace ESports.Domain.Migrations
                     b.HasOne("ESports.Domain.Models.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ESports.Domain.Models.Tournament", "Tournament")
                         .WithMany("TournamentTeams")
                         .HasForeignKey("TournamentFK")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Team");
@@ -526,7 +508,7 @@ namespace ESports.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("ESports.Domain.Models.MyUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -535,7 +517,7 @@ namespace ESports.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("ESports.Domain.Models.MyUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -550,7 +532,7 @@ namespace ESports.Domain.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("ESports.Domain.Models.MyUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -559,16 +541,16 @@ namespace ESports.Domain.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                    b.HasOne("ESports.Domain.Models.MyUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
+            modelBuilder.Entity("ESports.Domain.Models.Category", b =>
                 {
-                    b.Navigation("FavoritesList");
+                    b.Navigation("TeamsList");
                 });
 
             modelBuilder.Entity("ESports.Domain.Models.Team", b =>
@@ -585,6 +567,11 @@ namespace ESports.Domain.Migrations
                     b.Navigation("MatchesList");
 
                     b.Navigation("TournamentTeams");
+                });
+
+            modelBuilder.Entity("ESports.Domain.Models.RegularUser", b =>
+                {
+                    b.Navigation("FavoritesList");
                 });
 #pragma warning restore 612, 618
         }

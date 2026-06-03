@@ -18,6 +18,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.Tournament[0].GameName)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Tournament[0].PrizePool)
+            </th>
             <th class="text-center">Ações</th>
         </tr>
     </thead>
@@ -30,6 +33,9 @@
                 </td>
                 <td class="align-middle">
                     @Html.DisplayFor(modelItem => item.GameName)
+                </td>
+                <td class="align-middle fw-bold text-success">
+                    @Html.DisplayFor(modelItem => item.PrizePool)
                 </td>
                 <td class="text-center align-middle">
                     <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a> |
