@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace WebApp.Data.Seed
 {
     /// <summary>
-    /// Classe interna responsável por gerir a população (Seed) e inicialização dos dados predefinidos do sistema.
+    /// Classe estática responsável por gerir a população (Seed) e inicialização dos dados predefinidos do sistema.
     /// </summary>
-    public class DbInitializer
+    public static class DbInitializer
     {
         /// <summary>
         /// Executa as migrações da base de dados e insere as regras, o administrador e as categorias/equipas se não existirem.
@@ -17,7 +17,7 @@ namespace WebApp.Data.Seed
         /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
         /// <param name="roleManager">Gestor de perfis/roles do ASP.NET Core Identity.</param>
         /// <returns>Uma Task representando a operação assíncrona.</returns>
-        internal static async Task InitializeAsync(
+        public static async Task Initialize(
             ApplicationDbContext dbContext,
             UserManager<MyUser> userManager,
             RoleManager<IdentityRole> roleManager)
@@ -26,8 +26,8 @@ namespace WebApp.Data.Seed
             ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
             ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
 
-            // Executa migrações pendentes automaticamente em ambiente de desenvolvimento
-            if (dbContext.Database.GetPendingMigrations().Any())
+            // Executa migrações pendentes de forma totalmente assíncrona
+            if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
             {
                 await dbContext.Database.MigrateAsync();
             }
@@ -49,28 +49,18 @@ namespace WebApp.Data.Seed
 
             if (adminUser == null)
             {
-                // Criar primeiro a conta base de Autenticação (Identity)
-                var identityAdmin = new MyUser
+                var identityAdmin = new Admin
                 {
                     UserName = defaultAdminEmail,
                     Email = defaultAdminEmail,
                     FullName = "Administrador Master",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
                 };
 
                 var result = await userManager.CreateAsync(identityAdmin, "Admin_123!");
                 if (result.Succeeded)
                 {
-                    // Associar o utilizador ao Role de Admin
                     await userManager.AddToRoleAsync(identityAdmin, "Admin");
-
-                    var adminProfile = new Admin
-                    {
-                        PermissionLevel = "SuperAdmin",
-                        MyUserFK = identityAdmin.Id
-                    };
-
-                    await dbContext.AddAsync(adminProfile);
                     haAdicao = true;
                 }
             }
