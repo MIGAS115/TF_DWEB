@@ -17,6 +17,7 @@ namespace WebApp.Data.Seed
         /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
         /// <param name="roleManager">Gestor de perfis/roles do ASP.NET Core Identity.</param>
         /// <returns>Uma Task representando a operação assíncrona.</returns>
+
         public static async Task Initialize(
             ApplicationDbContext dbContext,
             UserManager<MyUser> userManager,
@@ -26,13 +27,9 @@ namespace WebApp.Data.Seed
             ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
             ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
 
-            // Executa migrações pendentes de forma totalmente assíncrona
-            if ((await dbContext.Database.GetPendingMigrationsAsync()).Any())
-            {
-                await dbContext.Database.MigrateAsync();
-            }
+            // Forçar a criação da BD sem depender de Migrations
+            dbContext.Database.EnsureCreated();
 
-            // Variável de controlo para otimizar os SaveChanges ao fim do Seed
             bool haAdicao = false;
 
             if (!await roleManager.RoleExistsAsync("Admin"))
@@ -65,6 +62,24 @@ namespace WebApp.Data.Seed
                 }
             }
 
+            // 1. INSERIR CATEGORIAS PRIMEIRO (Obrigatório para podermos associar as equipas depois)
+            if (!await dbContext.Categories.AnyAsync())
+            {
+                var categories = new[]
+                {
+                    new Category { Name = "CS2" },
+                    new Category { Name = "LOL" },
+                    new Category { Name = "DOTA2" }
+                };
+                await dbContext.Categories.AddRangeAsync(categories);
+                await dbContext.SaveChangesAsync(); // Guardar já para a BD gerar os IDs
+                haAdicao = false; // Reset à flag porque já fizemos SaveChanges
+            }
+
+            // Ir buscar as categorias recém-criadas para associar às equipas
+            var cs2Category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "CS2");
+            var lolCategory = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "LOL");
+
             if (!await dbContext.Tournaments.AnyAsync())
             {
                 var tournaments = new[]
@@ -77,13 +92,14 @@ namespace WebApp.Data.Seed
                 haAdicao = true;
             }
 
-            if (!await dbContext.Teams.AnyAsync())
+            if (!await dbContext.Teams.AnyAsync() && cs2Category != null && lolCategory != null)
             {
                 var teams = new[]
                 {
-                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true },
-                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true },
-                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true }
+                    // CORREÇÃO: Adicionado o CategoryFK que é obrigatório na tua classe Team!
+                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true, CategoryFK = cs2Category.Id },
+                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true, CategoryFK = lolCategory.Id },
+                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true, CategoryFK = cs2Category.Id }
                 };
                 await dbContext.Teams.AddRangeAsync(teams);
                 haAdicao = true;
