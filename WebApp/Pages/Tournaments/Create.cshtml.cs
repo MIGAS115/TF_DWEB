@@ -42,6 +42,17 @@ public class CreateModel : PageModel
     /// <returns>Redirecionamento para a listagem ou recarregamento em caso de erro.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
+        // Bloqueio temporário para ler os erros no terminal do dotnet run
+        if (!ModelState.IsValid)
+        {
+            foreach (var modelState in ModelState.Values)
+            {
+                foreach (var error in modelState.Errors)
+                {
+                    Console.WriteLine($"[ERRO DE VALIDAÇÃO]: {error.ErrorMessage}");
+                }
+            }
+        }
         if (!ModelState.IsValid || _context.Tournaments == null || Tournament == null)
         {
             return Page();
