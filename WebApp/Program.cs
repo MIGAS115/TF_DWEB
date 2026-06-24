@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Data.Seed;
 using WebApp.Hubs;
+using WebApp.Services.PandaScore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,7 +53,8 @@ builder.Services.AddRazorPages();
 /// essencial para a atualização dos resultados dos jogos na interface.
 /// </summary>
 builder.Services.AddSignalR();
-
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<PandaScoreWorker>();
 var app = builder.Build();
 
 /// <summary>
