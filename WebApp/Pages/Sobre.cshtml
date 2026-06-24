@@ -1,0 +1,42 @@
+﻿@page
+@model WebApp.Pages.SobreModel
+@{
+    ViewData["Title"] = "Sobre o Projeto";
+}
+
+<div class="container mt-5 mb-5">
+    <h1 class="display-6 fw-bold text-primary mb-4">Sobre o Projeto</h1>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100 p-4">
+                <h4 class="fw-semibold border-bottom pb-2">Informação Académica</h4>
+                <ul class="list-unstyled text-muted mt-3">
+                    <li><strong>Instituição:</strong> Instituto Politécnico de Tomar</li>
+                    <li><strong>Curso:</strong> Licenciatura em Engenharia Informática</li>
+                    <li><strong>Disciplina:</strong> Desenvolvimento Web</li>
+                    <li><strong>Ano Letivo:</strong> 2025/2026</li>
+                </ul>
+
+                <h4 class="fw-semibold border-bottom pb-2 mt-4">Autores</h4>
+                <ul class="list-unstyled text-muted mt-3">
+                    <li><strong>Nº 25981</strong> - Miguel Araújo</li>
+                    <li><strong>Nº 25954</strong> - Daniel Gonçalves</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100 p-4">
+
+                <h4 class="fw-semibold border-bottom pb-2">Tecnologias e Terceiros</h4>
+                <ul class="list-unstyled text-muted mt-3">
+                    <li><strong>PandaScore API:</strong> Fornecimento de dados live-score (CS2, LoL, Dota 2).</li>
+                    <li><strong>SignalR:</strong> Atualização de resultados em tempo real via WebSockets.</li>
+                    <li><strong>Entity Framework Core:</strong> ORM e modelação de dados.</li>
+                    <li><strong>Bootstrap 5:</strong> Componentes visuais e sistema de grelha.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

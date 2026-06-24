@@ -1,10 +1,82 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard de Jogos ao Vivo";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mb-5 mt-4">
+    <h1 class="display-4 fw-bold text-primary">Live E-Sports</h1>
+    <p class="lead text-muted">Acompanha os resultados em tempo real do CS2, League of Legends e Dota 2.</p>
 </div>
+
+<div class="row" id="matches-container">
+    <div class="col-12 text-center text-muted mt-5" id="loading-message">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">A carregar...</span>
+        </div>
+        <p>A estabelecer ligação à arena e a aguardar dados de jogos ao vivo...</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        /** * Sumário:
+         * Estabelece a ligação via WebSockets ao endpoint do MatchHub no servidor.
+         */
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/matchhub")
+            .build();
+
+        /** * Sumário:
+         * Ouve o evento "ReceiveMatchUpdate". Atualiza dinamicamente a pontuação e o estado
+         * de um jogo específico no Document Object Model (DOM).
+         */
+        connection.on("ReceiveMatchUpdate", function (matchId, status, homeScore, awayScore) {
+            const matchCard = document.getElementById(`match-${matchId}`);
+
+            if (matchCard) {
+                matchCard.querySelector('.match-status').innerText = status;
+                matchCard.querySelector('.home-score').innerText = homeScore;
+                matchCard.querySelector('.away-score').innerText = awayScore;
+            }
+        });
+
+        /** * Sumário:
+         * Ouve o evento "ReceiveNewMatch". Cria e injeta um novo cartão HTML na grelha
+         * sempre que um novo embate é registado na base de dados.
+         */
+        connection.on("ReceiveNewMatch", function (matchId, categoryName, matchName) {
+            document.getElementById('loading-message').style.display = 'none';
+
+            const container = document.getElementById('matches-container');
+            const cardHtml = `
+                <div class="col-md-4 mb-4" id="match-${matchId}">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-dark text-white fw-bold text-center">
+                            ${categoryName}
+                        </div>
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+                            <h5 class="card-title mb-4">${matchName}</h5>
+                            <div class="d-flex justify-content-center align-items-center mb-3">
+                                <h2 class="home-score text-primary mx-3 fw-bold">0</h2>
+                                <span class="text-muted fw-semibold">vs</span>
+                                <h2 class="away-score text-danger mx-3 fw-bold">0</h2>
+                            </div>
+                            <div>
+                                <span class="badge bg-success px-3 py-2 match-status">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            container.insertAdjacentHTML('beforeend', cardHtml);
+        });
+
+        /** * Sumário:
+         * Inicia formalmente a ligação em tempo real ao servidor SignalR.
+         */
+        connection.start().catch(function (err) {
+            console.error("Erro na ligação ao SignalR: ", err.toString());
+        });
+    </script>
+}
