@@ -24,7 +24,7 @@ public class IndexModel : PageModel
     /// <summary>
     /// Coleção de torneios a ser renderizada na interface gráfica da página.
     /// </summary>
-    public IList<Tournament> Tournament { get; set; } = default!;
+    public IList<Tournament> Tournaments { get; set; } = [];
 
     /// <summary>
     /// Executa a leitura assíncrona dos torneios ordenados alfabeticamente.
@@ -33,7 +33,7 @@ public class IndexModel : PageModel
     {
         if (_context.Tournaments != null)
         {
-            Tournament = await _context.Tournaments
+            Tournaments = await _context.Tournaments
                 .OrderBy(t => t.Name)
                 .ToListAsync();
         }

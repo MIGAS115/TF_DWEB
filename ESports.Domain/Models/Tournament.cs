@@ -43,7 +43,6 @@ namespace ESports.Domain.Models
         /// <summary>
         /// Indica se o registo foi inserido ou modificado manualmente via Administração.
         /// </summary>
-        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [Display(Name = "Substituição Manual")]
         public bool IsManualOverride { get; set; }
 

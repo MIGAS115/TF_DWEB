@@ -96,7 +96,6 @@ namespace WebApp.Data.Seed
             {
                 var teams = new[]
                 {
-                    // CORREÇÃO: Adicionado o CategoryFK que é obrigatório na tua classe Team!
                     new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true, CategoryFK = cs2Category.Id },
                     new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true, CategoryFK = lolCategory.Id },
                     new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true, CategoryFK = cs2Category.Id }

@@ -12,20 +12,13 @@
 <table class="table table-striped table-hover shadow-sm">
     <thead class="table-dark">
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Tournament[0].Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Tournament[0].GameName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Tournament[0].PrizePool)
-            </th>
+            <th>Nome do Torneio</th>
+            <th>Nome do Jogo</th>
             <th class="text-center">Ações</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in Model.Tournament)
+        @foreach (var item in Model.Tournaments)
         {
             <tr>
                 <td class="align-middle">
@@ -33,9 +26,6 @@
                 </td>
                 <td class="align-middle">
                     @Html.DisplayFor(modelItem => item.GameName)
-                </td>
-                <td class="align-middle fw-bold text-success">
-                    @Html.DisplayFor(modelItem => item.PrizePool)
                 </td>
                 <td class="text-center align-middle">
                     <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a> |

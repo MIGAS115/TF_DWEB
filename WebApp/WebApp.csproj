@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Components\**" />
+    <Content Remove="Components\**" />
+    <EmbeddedResource Remove="Components\**" />
+    <None Remove="Components\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="app.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
@@ -31,7 +38,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Components\Pages\" />
     <Folder Include="Styles\" />
     <Folder Include="wwwroot\images\logos\" />
   </ItemGroup>

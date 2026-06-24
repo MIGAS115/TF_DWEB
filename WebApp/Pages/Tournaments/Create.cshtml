@@ -1,62 +1,39 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using ESports.Domain.Data;
-using ESports.Domain.Models;
-using System.Globalization;
-namespace WebApp.Pages.Tournaments;
-/// <summary>
-/// PageModel responsável por processar a criação de novos torneios no sistema.
-/// </summary>
-public class CreateModel : PageModel
-{
-private readonly ApplicationDbContext _context;
-
-/// <summary>
-/// Construtor com injeção de dependência do contexto de base de dados.
-/// </summary>
-/// <param name="context">O contexto de dados partilhado.</param>
-public CreateModel(ApplicationDbContext context)
-{
-_context = context;
+﻿@page
+@model WebApp.Pages.Tournaments.CreateModel
+@{
+    ViewData["Title"] = "Criar Torneio";
 }
 
-/// <summary>
-/// Disponibiliza o formulário de criação de torneios.
-/// </summary>
-/// <returns>O resultado de renderização da página.</returns>
-public IActionResult OnGet()
-{
-return Page();
-}
+<h1>Criar Novo Torneio</h1>
+<hr />
 
-/// <summary>
-/// Propriedade vinculada ao formulário que captura os dados do novo torneio.
-/// </summary>
-[BindProperty]
-public Tournament Tournament { get; set; } = default!;
+<div class="row">
+    <div class="col-md-6">
+        <form method="post" class="card p-4 shadow-sm">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-/// <summary>
-/// Valida e persiste o novo torneio na base de dados.
-/// </summary>
-/// <returns>Redirecionamento para a listagem ou recarregamento em caso de erro.</returns>
-public async Task<IActionResult> OnPostAsync()
-{
-if (!ModelState.IsValid || _context.Tournaments == null || Tournament == null)
-{
-return Page();
-}
+            <div class="form-group mb-3">
+                <label asp-for="Tournament.Name" class="control-label fw-bold"></label>
+                <input asp-for="Tournament.Name" class="form-control" placeholder="Ex: Campeonato Nacional" />
+                <span asp-validation-for="Tournament.Name" class="text-danger"></span>
+            </div>
 
-// --- CONVERSÃO DA ARQUITETURA DECIMAL ---
-// Normaliza o input trocando pontos por vírgulas e converte com segurança para pt-PT
-Tournament.PrizePool = Convert.ToDecimal(
-Tournament.PrizePoolAux.Replace('.', ','),
-new CultureInfo("pt-PT"));
+            <div class="form-group mb-4">
+                <label asp-for="Tournament.GameName" class="control-label fw-bold"></label>
+                <input asp-for="Tournament.GameName" class="form-control" placeholder="Ex: CS2" />
+                <span asp-validation-for="Tournament.GameName" class="text-danger"></span>
+            </div>
 
-Tournament.IsManualOverride = true;
+            <div class="form-group d-flex gap-2">
+                <input type="submit" value="Guardar Torneio" class="btn btn-success" />
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancelar e Voltar</a>
+            </div>
+        </form>
+    </div>
+</div>
 
-_context.Tournaments.Add(Tournament);
-await _context.SaveChangesAsync();
-
-return RedirectToPage("./Index");
-}
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
