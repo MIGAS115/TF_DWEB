@@ -3,6 +3,7 @@ using ESports.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Data.Seed;
+using WebApp.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,11 +43,15 @@ builder.Services.AddSession(options =>
 });
 
 /// <summary>
-/// Regista os serviços subjacentes ao modelo MVC com foco no pipeline das Razor Pages (App Web)
-/// e Controllers (obrigatório para a especificação da Componente 2 de API).
+/// Regista os serviços subjacentes ao modelo MVC com foco exclusivo no pipeline das Razor Pages.
 /// </summary>
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+
+/// <summary>
+/// Regista o serviço SignalR para permitir comunicação bidirecional em tempo real,
+/// essencial para a atualização dos resultados dos jogos na interface.
+/// </summary>
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -58,7 +63,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
-
     app.UseDbInitializer();
 }
 else
@@ -70,12 +74,16 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
-app.MapControllers();
+
+/// <summary>
+/// Mapeia o endpoint do SignalR para o MatchHub, permitindo que os clientes Web
+/// estabeleçam a ligação WebSocket para receberem atualizações de jogos ao vivo.
+/// </summary>
+app.MapHub<MatchHub>("/matchhub");
 
 app.Run();
