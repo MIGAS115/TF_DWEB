@@ -53,6 +53,34 @@ public class CreateModel : PageModel
                 }
             }
         }
+        // 1. Validar e converter o PrizePoolAux de forma condicional (Padrão de Localização pt-PT do Professor)
+        if (!string.IsNullOrWhiteSpace(Tournament.PrizePoolAux))
+        {
+            try
+            {
+                // Sanitiza pontos/vírgulas e converte usando a cultura pt-PT
+                Tournament.PrizePool = Convert.ToDecimal(
+                    Tournament.PrizePoolAux.Replace('.', ','),
+                    new System.Globalization.CultureInfo("pt-PT")
+                );
+            }
+            catch
+            {
+                // Se falhar a conversão, adiciona o erro ao ModelState para ser exibido na View
+                ModelState.AddModelError("Tournament.PrizePoolAux", "O valor introduzido para o Prémio Total é inválido.");
+            }
+        }
+        else
+        {
+            // Se o campo foi deixado em branco, o prémio fica explicitamente nulo (ou 0, conforme a BD)
+            Tournament.PrizePool = null;
+        }
+
+        // 2. Validação padrão do estado do modelo
+        if (!ModelState.IsValid || _context.Tournaments == null || Tournament == null)
+        {
+            return Page();
+        }
         if (!ModelState.IsValid || _context.Tournaments == null || Tournament == null)
         {
             return Page();

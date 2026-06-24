@@ -16,8 +16,18 @@
             <dt class="col-sm-3 text-secondary">
                 @Html.DisplayNameFor(model => model.Tournament.PrizePool)
             </dt>
+            <dt class="col-sm-3 text-secondary">
+                @Html.DisplayNameFor(model => model.Tournament.PrizePool)
+            </dt>
             <dd class="col-sm-9 fw-bold text-success">
-                @Model.Tournament.PrizePool.ToString("C", new System.Globalization.CultureInfo("pt-PT"))
+                @if (Model.Tournament.PrizePool.HasValue)
+                {
+                    @Model.Tournament.PrizePool.Value.ToString("C", new System.Globalization.CultureInfo("pt-PT"))
+                }
+                else
+                {
+                    <span class="text-muted fw-normal">Não aplicável (Sem Prémio)</span>
+                }
             </dd>
             <dd class="col-sm-9 fw-bold">
                 @Html.DisplayFor(model => model.Tournament.Name)
