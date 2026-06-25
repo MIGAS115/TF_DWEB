@@ -19,10 +19,6 @@ public class ApplicationDbContext : IdentityDbContext<MyUser>
     {
     }
 
-    /* ************************************************************
-     * DbSets de Autenticação (Perfis Herdados de MyUser)
-     * ************************************************************ */
-
     /// <summary>
     /// Tabela representativa dos utilizadores com privilégios de Administração.
     /// </summary>
@@ -32,10 +28,6 @@ public class ApplicationDbContext : IdentityDbContext<MyUser>
     /// Tabela representativa dos utilizadores regulares/normais da plataforma.
     /// </summary>
     public DbSet<RegularUser> RegularUsers { get; set; } = null!;
-
-    /* ************************************************************
-     * DbSets de Negócio (E-Sports)
-     * ************************************************************ */
 
     /// <summary>
     /// Tabela representativa das equipas de e-sports.

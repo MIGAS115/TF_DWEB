@@ -18,14 +18,13 @@
         </tr>
     </thead>
     <tbody>
-        @* Renderiza a listagem através da propriedade pluralizada para evitar conflitos de tipo no escopo local *@
         @foreach (var item in Model.Teams)
         {
             <tr>
                 <td class="text-center">
                     @if (!string.IsNullOrEmpty(item.LogoPath))
                     {
-                        <img src="~/images/teams/@item.LogoPath" alt="Logo @item.Name" style="max-height: 40px; max-width: 60px; object-fit: contain;" />
+                        <img src="~/images/@item.LogoPath" alt="Logótipo de @item.Name" class="img-thumbnail" style="max-width: 50px; max-height: 50px;" />
                     }
                     else
                     {
@@ -33,12 +32,10 @@
                     }
                 </td>
                 <td class="fw-bold fs-5">
-                    @* Acesso direto à propriedade de texto para mitigar avaliações circulares e recursividade de grafos *@
                     @item.Name
                 </td>
                 <td class="align-middle">
-                    <div class="d-flex align-items-center gap-2">
-
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
                         @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin"))
                         {
                             <form method="post" asp-page-handler="ToggleFavorite" asp-route-teamId="@item.Id" style="display:inline; margin:0;">
@@ -66,3 +63,23 @@
         }
     </tbody>
 </table>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-sm shadow-sm">
+            <li class="page-item @(Model.PaginaAtual == 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)">Anterior</a>
+            </li>
+            @for (int i = 1; i <= Model.TotalPaginas; i++)
+            {
+                <li class="page-item @(Model.PaginaAtual == i ? "active" : "")">
+                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.PaginaAtual == Model.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)">Seguinte</a>
+            </li>
+        </ul>
+    </nav>
+}

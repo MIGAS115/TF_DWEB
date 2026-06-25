@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace WebApp.Data.Seed;
+namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
 /// Classe de extensão para expor a inicialização do Seed no pipeline do Program.cs de forma síncrona.

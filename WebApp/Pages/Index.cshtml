@@ -4,76 +4,136 @@
     ViewData["Title"] = "Dashboard de Jogos ao Vivo";
 }
 
-<div class="text-center mb-5 mt-4">
-    <h1 class="display-4 fw-bold text-primary">Live E-Sports</h1>
-    <p class="lead text-muted">Acompanha os resultados em tempo real do CS2, League of Legends e Dota 2.</p>
+<div class="text-center mb-4 mt-4">
+    <h1 class="display-5 fw-bold text-primary">Live E-Sports</h1>
+    <p class="lead text-muted text-sm">Acompanha os resultados em tempo real do CS2, League of Legends e Dota 2.</p>
 </div>
 
-<div class="row" id="matches-container">
-    <div class="col-12 text-center text-muted mt-5" id="loading-message">
-        <div class="spinner-border text-primary mb-3" role="status">
-            <span class="visually-hidden">A carregar...</span>
+<div class="row row-cols-1 row-cols-md-3 g-3" id="matches-container">
+    @if (Model.ExistingMatches.Any())
+    {
+        @foreach (var match in Model.ExistingMatches)
+        {
+            <div class="col" id="match-@match.Id">
+                <div class="card shadow-sm border-0 h-100 mx-auto" style="max-width: 340px;">
+                    <div class="card-header bg-dark text-white fw-bold text-center text-xs py-2">
+                        @match.Tournament.GameName
+                    </div>
+                    <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+                        <h6 class="card-title text-muted text-xs mb-3">@match.HomeTeam.Name vs @match.AwayTeam.Name</h6>
+                        <div class="d-flex justify-content-center align-items-center mb-2">
+                            <h3 class="home-score text-primary mx-3 fw-bold mb-0">@(match.HomeScore ?? 0)</h3>
+                            <span class="text-muted text-xs fw-semibold">vs</span>
+                            <h3 class="away-score text-danger mx-3 fw-bold mb-0">@(match.AwayScore ?? 0)</h3>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge bg-success px-2 py-1 text-xs match-status">@match.Status.ToUpperInvariant()</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12 text-center text-muted mt-5" id="loading-message">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">A carregar...</span>
+            </div>
+            <p class="text-sm">A estabelecer ligação à arena e a aguardar dados de jogos ao vivo...</p>
         </div>
-        <p>A estabelecer ligação à arena e a aguardar dados de jogos ao vivo...</p>
-    </div>
+    }
 </div>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="d-flex justify-content-center mt-5 mb-4">
+        <ul class="pagination pagination-sm shadow-sm">
+            <li class="page-item @(Model.PaginaAtual == 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)">Anterior</a>
+            </li>
+
+            @for (int i = 1; i <= Model.TotalPaginas; i++)
+            {
+                <li class="page-item @(Model.PaginaAtual == i ? "active" : "")">
+                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.PaginaAtual == Model.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)">Seguinte</a>
+            </li>
+        </ul>
+    </nav>
+}
 
 @section Scripts {
     <script>
         /** * Sumário:
-         * Estabelece a ligação via WebSockets ao endpoint do MatchHub no servidor.
+         * Inicializa a configuração da ligação assíncrona ao Hub do SignalR.
          */
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/matchhub")
             .build();
 
         /** * Sumário:
-         * Ouve o evento "ReceiveMatchUpdate". Atualiza dinamicamente a pontuação e o estado
-         * de um jogo específico no Document Object Model (DOM).
+         * Regista o evento do SignalR responsável pela atualização de golos e estados de jogos ativos.
          */
         connection.on("ReceiveMatchUpdate", function (matchId, status, homeScore, awayScore) {
             const matchCard = document.getElementById(`match-${matchId}`);
-
             if (matchCard) {
-                matchCard.querySelector('.match-status').innerText = status;
+                matchCard.querySelector('.match-status').innerText = status.toUpperCase();
                 matchCard.querySelector('.home-score').innerText = homeScore;
                 matchCard.querySelector('.away-score').innerText = awayScore;
             }
         });
 
         /** * Sumário:
-         * Ouve o evento "ReceiveNewMatch". Cria e injeta um novo cartão HTML na grelha
-         * sempre que um novo embate é registado na base de dados.
+         * Regista o evento do SignalR responsável pelo desenho dinâmico de novos jogos na listagem.
          */
         connection.on("ReceiveNewMatch", function (matchId, categoryName, matchName) {
-            document.getElementById('loading-message').style.display = 'none';
+            const loadingElem = document.getElementById('loading-message');
+            if (loadingElem) {
+                loadingElem.style.display = 'none';
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const pagina = urlParams.get('paginaAtual') || "1";
+            if (pagina !== "1") return;
+
+            if (document.getElementById(`match-${matchId}`)) return;
 
             const container = document.getElementById('matches-container');
+
+            if (container.children.length >= 9) {
+                container.lastElementChild.remove();
+            }
+
             const cardHtml = `
-                <div class="col-md-4 mb-4" id="match-${matchId}">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-dark text-white fw-bold text-center">
+                <div class="col" id="match-${matchId}">
+                    <div class="card shadow-sm border-0 h-100 mx-auto" style="max-width: 340px;">
+                        <div class="card-header bg-dark text-white fw-bold text-center text-xs py-2">
                             ${categoryName}
                         </div>
-                        <div class="card-body text-center d-flex flex-column justify-content-center">
-                            <h5 class="card-title mb-4">${matchName}</h5>
-                            <div class="d-flex justify-content-center align-items-center mb-3">
-                                <h2 class="home-score text-primary mx-3 fw-bold">0</h2>
-                                <span class="text-muted fw-semibold">vs</span>
-                                <h2 class="away-score text-danger mx-3 fw-bold">0</h2>
+                        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+                            <h6 class="card-title text-muted text-xs mb-3">${matchName}</h6>
+                            <div class="d-flex justify-content-center align-items-center mb-2">
+                                <h3 class="home-score text-primary mx-3 fw-bold mb-0">0</h3>
+                                <span class="text-muted text-xs fw-semibold">vs</span>
+                                <h3 class="away-score text-danger mx-3 fw-bold mb-0">0</h3>
                             </div>
-                            <div>
-                                <span class="badge bg-success px-3 py-2 match-status">LIVE</span>
+                            <div class="mt-2">
+                                <span class="badge bg-success px-2 py-1 text-xs match-status">LIVE</span>
                             </div>
                         </div>
                     </div>
                 </div>`;
 
-            container.insertAdjacentHTML('beforeend', cardHtml);
+            container.insertAdjacentHTML('afterbegin', cardHtml);
         });
 
         /** * Sumário:
-         * Inicia formalmente a ligação em tempo real ao servidor SignalR.
+         * Efetua o arranque da ligação WebSocket para escuta de transmissões em tempo real.
          */
         connection.start().catch(function (err) {
             console.error("Erro na ligação ao SignalR: ", err.toString());
