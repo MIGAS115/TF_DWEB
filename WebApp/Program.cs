@@ -1,8 +1,12 @@
+using System;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Data.Seed;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using WebApp.Hubs;
 using WebApp.Services.PandaScore;
 
@@ -13,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 /// Valida a existência da connection string, requisito essencial para a persistência e integridade dos dados.
 /// </summary>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("A connection string 'DefaultConnection' não foi encontrada na configuração da aplicação.");
+    ?? throw new InvalidOperationException("Connection string not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -33,6 +37,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+
 /// <summary>
 /// Configura os serviços de estado de sessão HTTP obrigatórios da plataforma com expiração rígida.
 /// </summary>
@@ -44,17 +51,21 @@ builder.Services.AddSession(options =>
 });
 
 /// <summary>
-/// Regista os serviços subjacentes ao modelo MVC com foco exclusivo no pipeline das Razor Pages.
-/// </summary>
-builder.Services.AddRazorPages();
-
-/// <summary>
 /// Regista o serviço SignalR para permitir comunicação bidirecional em tempo real,
 /// essencial para a atualização dos resultados dos jogos na interface.
 /// </summary>
 builder.Services.AddSignalR();
+
+/// <summary>
+/// Configura a fábrica de clientes HTTP para consumo de serviços externos.
+/// </summary>
 builder.Services.AddHttpClient();
+
+/// <summary>
+/// Regista o serviço em segundo plano responsável pela sincronização de dados com a API PandaScore.
+/// </summary>
 builder.Services.AddHostedService<PandaScoreWorker>();
+
 var app = builder.Build();
 
 /// <summary>
@@ -75,12 +86,14 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCookiePolicy();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+app.MapControllers();
 
 /// <summary>
 /// Mapeia o endpoint do SignalR para o MatchHub, permitindo que os clientes Web

@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ESports.Domain.Data;
@@ -7,7 +12,7 @@ using ESports.Domain.Models;
 namespace WebApp.Pages.Tournaments;
 
 /// <summary>
-/// PageModel responsável por listar todos os torneios registados na plataforma.
+/// PageModel responsável por listar todos os torneios registados na plataforma através de paginação.
 /// </summary>
 public class IndexModel : PageModel
 {
@@ -35,12 +40,43 @@ public class IndexModel : PageModel
     /// <summary>
     /// Executa a leitura assíncrona dos torneios ordenados alfabeticamente e filtra as permissões de edição.
     /// </summary>
-    public async Task OnGetAsync()
+    [BindProperty(SupportsGet = true)]
+    public int PaginaAtual { get; set; } = 1;
+
+    /// <summary>
+    /// Obtém ou define o total de páginas disponíveis com base nos torneios existentes.
+    /// </summary>
+    public int TotalPaginas { get; set; }
+
+    /// <summary>
+    /// Executa a leitura assíncrona, ordenada e paginada dos torneios registados na base de dados.
+    /// </summary>
+    /// <param name="paginaAtual">Parâmetro opcional correspondente à página solicitada.</param>
+    /// <returns>Uma Task representando a operação assíncrona.</returns>
+    public async Task OnGetAsync(int? paginaAtual)
     {
+        if (paginaAtual.HasValue && paginaAtual.Value > 0)
+        {
+            PaginaAtual = paginaAtual.Value;
+        }
+
+        int tamanhoPagina = 9;
+
         if (_context.Tournaments != null)
         {
+            int totalRegistos = await _context.Tournaments.CountAsync();
+            TotalPaginas = (int)Math.Ceiling(totalRegistos / (double)tamanhoPagina);
+
+            if (PaginaAtual > TotalPaginas && TotalPaginas > 0)
+            {
+                PaginaAtual = TotalPaginas;
+            }
+
             Tournaments = await _context.Tournaments
                 .OrderBy(t => t.Name)
+                .Skip((PaginaAtual - 1) * tamanhoPagina)
+                .Take(tamanhoPagina)
+                .AsNoTracking()
                 .ToListAsync();
 
             // Identificar o utilizador logado e os seus privilégios

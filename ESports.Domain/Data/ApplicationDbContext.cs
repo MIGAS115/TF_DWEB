@@ -21,10 +21,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     {
     }
 
-    /* ************************************************************
-     * DbSets de Domínio (Perfis de Utilizador - Estratégia TPH)
-     * ************************************************************ */
-
     /// <summary>
     /// Tabela base representativa de todos os utilizadores no contexto de negócio da plataforma.
     /// </summary>
@@ -39,10 +35,6 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     /// Filtro de tabela focado nos utilizadores regulares/normais da plataforma.
     /// </summary>
     public DbSet<RegularUser> RegularUsers { get; set; } = null!;
-
-    /* ************************************************************
-     * DbSets de Negócio (E-Sports)
-     * ************************************************************ */
 
     /// <summary>
     /// Tabela representativa das equipas de e-sports.

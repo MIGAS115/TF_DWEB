@@ -13,7 +13,7 @@
     }
 </div>
 
-<table class="table table-striped table-hover shadow-sm">
+<table class="table table-striped table-hover shadow-sm align-middle">
     <thead class="table-dark">
         <tr>
             <th>Nome do Torneio</th>
@@ -26,10 +26,10 @@
         {
             <tr>
                 <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.Name)
+                    @item.Name
                 </td>
                 <td class="align-middle">
-                    @Html.DisplayFor(modelItem => item.GameName)
+                    @item.GameName
                 </td>
                 <td class="text-center align-middle">
 
@@ -49,3 +49,23 @@
         }
     </tbody>
 </table>
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-sm shadow-sm">
+            <li class="page-item @(Model.PaginaAtual == 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)">Anterior</a>
+            </li>
+            @for (int i = 1; i <= Model.TotalPaginas; i++)
+            {
+                <li class="page-item @(Model.PaginaAtual == i ? "active" : "")">
+                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.PaginaAtual == Model.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)">Seguinte</a>
+            </li>
+        </ul>
+    </nav>
+}

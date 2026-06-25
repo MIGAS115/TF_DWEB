@@ -11,7 +11,7 @@ namespace ESports.Domain.Models
     /// Implementa o suporte a dados híbridos e chaves estrangeiras duplas auto-referenciais.
     /// </summary>
     [PrimaryKey(nameof(Id))]
-    public class Match
+    public class Match : ExternalDataEntity
     {
         /// <summary>
         /// Identificador único do jogo na base de dados.

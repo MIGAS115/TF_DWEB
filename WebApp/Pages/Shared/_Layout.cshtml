@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="~/WebApp.styles.css" asp-append-version="true" />
 </head>
 <body>
+    <partial name="_CookieConsentPartial" />
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
@@ -58,14 +60,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-    @* <summary>
-    Injeção da biblioteca cliente do SignalR.
-    Permite que as páginas estabeleçam a ligação WebSocket bidirecional ao MatchHub.
-    </summary>
-    *@
     <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
-
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

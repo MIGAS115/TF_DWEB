@@ -1,14 +1,29 @@
-﻿using ESports.Domain.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ESports.Domain.Data;
 using ESports.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace WebApp.Data.Seed
+namespace ESports.Domain.Data;
+
+/// <summary>
+/// Classe estática responsável por gerir a população (Seed) e inicialização dos dados predefinidos do sistema.
+/// </summary>
+public static class DbInitializer
 {
     /// <summary>
-    /// Classe estática responsável por gerir a população (Seed) e inicialização dos dados predefinidos do sistema.
+    /// Executa as migrações da base de dados e insere as regras, o administrador e as categorias/equipas se não existirem.
     /// </summary>
-    public static class DbInitializer
+    /// <param name="dbContext">Contexto da base de dados da aplicação.</param>
+    /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
+    /// <param name="roleManager">Gestor de perfis/roles do ASP.NET Core Identity.</param>
+    /// <returns>Uma Task representando a operação assíncrona.</returns>
+    public static async Task Initialize(
+        ApplicationDbContext dbContext,
+        UserManager<MyUser> userManager,
+        RoleManager<IdentityRole> roleManager)
     {
         /// <summary>
         /// Executa as migrações da base de dados e insere as regras, o administrador e as categorias/equipas se não existirem.
@@ -34,6 +49,13 @@ namespace WebApp.Data.Seed
                     await roleManager.CreateAsync(new IdentityRole(roleName));
                 }
             }
+        }
+
+        if (!await dbContext.Categories.AnyAsync())
+        {
+            var cs2Category = new Category { Name = "CS2" };
+            var lolCategory = new Category { Name = "LOL" };
+            var dotaCategory = new Category { Name = "DOTA2" };
 
             // Utilizador Admin
             var defaultAdminEmail = "admin@esports.pt";
@@ -99,7 +121,10 @@ namespace WebApp.Data.Seed
             // Equipas (Usamos a propriedade de navegação em vez de forçar o ID logo à partida)
             if (!await dbContext.Teams.AnyAsync() && cs2Category != null && lolCategory != null)
             {
-                var teams = new[]
+                var cs2 = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "CS2");
+                var lol = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "LOL");
+
+                if (cs2 != null && lol != null)
                 {
                     new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true, Category = cs2Category },
                     new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true, Category = lolCategory },
@@ -108,6 +133,7 @@ namespace WebApp.Data.Seed
                 await dbContext.Teams.AddRangeAsync(teams);
                 haAdicao = true;
             }
+        }
 
             // SaveChangesAsync no final para otimizar o I/O
             if (haAdicao)

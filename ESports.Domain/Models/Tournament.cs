@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,7 +10,7 @@ namespace ESports.Domain.Models
     /// Entidade de domínio que representa um Torneio de desportos eletrónicos.
     /// Unifica a lógica híbrida e a segregação por jogos (CS2, LOL, DOTA2) através do atributo GameName.
     /// </summary>
-    public class Tournament
+    public class Tournament : ExternalDataEntity
     {
         /// <summary>
         /// Chave primária do Torneio.
@@ -32,19 +33,6 @@ namespace ESports.Domain.Models
         [StringLength(50, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
         [Display(Name = "Nome do Jogo")]
         public string GameName { get; set; } = null!;
-
-        /// <summary>
-        /// Identificador único do registo de origem na API externa de e-sports.
-        /// </summary>
-        [StringLength(100, ErrorMessage = "O {0} não pode exceder os {1} caracteres.")]
-        [Display(Name = "ID Fonte Externa")]
-        public string? ExternalSourceId { get; set; }
-
-        /// <summary>
-        /// Indica se o registo foi inserido ou modificado manualmente via Administração.
-        /// </summary>
-        [Display(Name = "Substituição Manual")]
-        public bool IsManualOverride { get; set; }
 
         /// <summary>
         /// Valor real do prémio total do torneio, guardado na base de dados.
