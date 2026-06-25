@@ -3,12 +3,15 @@ using ESports.Domain.Data;
 using ESports.Domain.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WebApp.Hubs;
+using WebApp.Services.Email;
 using WebApp.Services.PandaScore;
+using WebApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +39,12 @@ builder.Services.AddDefaultIdentity<MyUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+/// <summary>
+/// Regista o serviço de envio de e-mails customizado da plataforma.
+/// Essencial para processar a confirmação de contas em conformidade com as restrições do Identity.
+/// </summary>
+builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
