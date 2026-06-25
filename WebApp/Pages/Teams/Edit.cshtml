@@ -2,51 +2,57 @@
 @model WebApp.Pages.Teams.EditModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Editar Equipa";
 }
 
-<h1>Edit</h1>
-<h4>Team</h4>
+<h1>Editar Equipa</h1>
 <hr />
+
 <div class="row">
-    <div class="col-md-4">
-        <form method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-6">
+        <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
             <input type="hidden" asp-for="Team.Id" />
             <input type="hidden" asp-for="Team.LogoPath" />
-            
-            <div class="form-group">
-                <span class="text-danger">*</span>
-                <label asp-for="Team.Name" class="control-label"></label>
+            <input type="hidden" asp-for="Team.OwnerId" />
+            <input type="hidden" asp-for="Team.IsManualOverride" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Team.Name" class="control-label fw-bold">Nome da Equipa <span class="text-danger">*</span></label>
                 <input asp-for="Team.Name" class="form-control" aria-required="true" />
                 <span asp-validation-for="Team.Name" class="text-danger"></span>
             </div>
-            
-            <div class="form-group">
-                <label class="control-label">Substituir Logo (Opcional)</label>
-                <input type="file" asp-for="LogoFile" class="form-control" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Team.CategoryFK" class="control-label fw-bold">Categoria (Jogo) <span class="text-danger">*</span></label>
+                <select asp-for="Team.CategoryFK" class="form-control" asp-items="Model.CategoryList">
+                    <option value="">-- Selecione uma Categoria --</option>
+                </select>
+                <span asp-validation-for="Team.CategoryFK" class="text-danger"></span>
             </div>
 
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Team.IsManualOverride" /> @Html.DisplayNameFor(model => model.Team.IsManualOverride)
-                </label>
+            <div class="form-group mb-4">
+                <label class="control-label fw-bold">Substituir Logótipo (Opcional)</label>
+
+                @if (!string.IsNullOrEmpty(Model.Team.LogoPath))
+                {
+                    <div class="mb-2">
+                        <img src="~/images/teams/@Model.Team.LogoPath" alt="Logo Atual" class="img-thumbnail" style="max-height: 80px;" />
+                        <small class="d-block text-muted">Logótipo Atual</small>
+                    </div>
+                }
+
+                <input type="file" asp-for="LogoFile" class="form-control" accept=".jpg,.jpeg,.png,.gif,.svg" />
+                <small class="form-text text-muted">Se enviar um novo ficheiro, a imagem anterior será permanentemente apagada do servidor.</small>
             </div>
-            
-            <div class="form-group">
-                <label asp-for="Team.ExternalSourceId" class="control-label"></label>
-                <input asp-for="Team.ExternalSourceId" class="form-control" />
-                <span asp-validation-for="Team.ExternalSourceId" class="text-danger"></span>
-            </div>
-            
-            <div class="form-group mt-3">
-                <input type="submit" value="Save" class="btn btn-primary" />
+
+            <div class="form-group d-flex gap-2">
+                <input type="submit" value="Guardar Alterações" class="btn btn-primary" />
+                <a asp-page="./Index" class="btn btn-outline-secondary">Cancelar e Voltar</a>
             </div>
         </form>
     </div>
-</div>
-<div>
-    <a asp-page="./Index">Back to List</a>
 </div>
 
 @section Scripts {

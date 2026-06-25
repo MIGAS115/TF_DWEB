@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +14,9 @@ namespace WebApp.Pages.Teams
 {
     /// <summary>
     /// PageModel responsável pela remoção de equipas, garantindo a integridade referencial dos dados e eliminando os respetivos ficheiros de logótipo físicos.
+    /// Restrito a Admin e Gestores, validando a posse do recurso.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Gestor")]
     public class DeleteModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -23,8 +25,6 @@ namespace WebApp.Pages.Teams
         /// <summary>
         /// Inicializa o PageModel injetando os contextos da base de dados e do ambiente web.
         /// </summary>
-        /// <param name="context">Contexto da base de dados.</param>
-        /// <param name="environment">Ambiente de alojamento web.</param>
         public DeleteModel(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
@@ -38,15 +38,13 @@ namespace WebApp.Pages.Teams
         public Team Team { get; set; } = default!;
 
         /// <summary>
-        /// Mensagem de erro a apresentar caso a eliminação seja impedida por dependências de integridade relacional.
+        /// Mensagem de erro a apresentar caso a eliminação seja impedida por dependências.
         /// </summary>
         public string? ErrorMessage { get; set; }
 
         /// <summary>
-        /// Processa o pedido HTTP GET para apresentar os detalhes da equipa a eliminar.
+        /// Processa o pedido HTTP GET para apresentar os detalhes, validando a permissão do utilizador.
         /// </summary>
-        /// <param name="id">Chave primária da equipa.</param>
-        /// <returns>A página renderizada ou resultado NotFound se o id não existir.</returns>
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null || _context.Teams == null)
@@ -61,17 +59,20 @@ namespace WebApp.Pages.Teams
                 return NotFound();
             }
 
-            Team = team;
+            // Validação de Ownership
+            var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!User.IsInRole("Admin") && team.OwnerId != loggedInUserId)
+            {
+                return Forbid();
+            }
 
+            Team = team;
             return Page();
         }
 
         /// <summary>
-        /// Processa o pedido HTTP POST para confirmar a eliminação.
-        /// Bloqueia a ação caso existam jogos associados na tabela Matches.
+        /// Confirma a eliminação, bloqueia por dependências relacionais, elimina o ficheiro associado e atualiza a BD.
         /// </summary>
-        /// <param name="id">Chave primária da equipa.</param>
-        /// <returns>Redireciona para o Index em caso de sucesso, ou recarrega a página com erro.</returns>
         public async Task<IActionResult> OnPostAsync(int? id)
         {
             if (id == null || _context.Teams == null)
@@ -79,32 +80,37 @@ namespace WebApp.Pages.Teams
                 return NotFound();
             }
 
+            var team = await _context.Teams.FindAsync(id);
+            if (team == null)
+            {
+                return NotFound();
+            }
+
+            // Validação de Ownership (Segurança contra POST falsificado)
+            var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!User.IsInRole("Admin") && team.OwnerId != loggedInUserId)
+            {
+                return Forbid();
+            }
+
+            Team = team;
+
+            // Validação de Integridade Referencial
             bool hasMatches = await _context.Matches.AnyAsync(m => m.HomeTeamFK == id || m.AwayTeamFK == id);
 
             if (hasMatches)
             {
-                var targetTeam = await _context.Teams.FirstOrDefaultAsync(m => m.Id == id);
-                if (targetTeam == null)
-                {
-                    return NotFound();
-                }
-
-                Team = targetTeam;
                 ErrorMessage = "Não é possível eliminar esta equipa porque já existem jogos associados (como visitada ou visitante). Elimine os jogos primeiro.";
-
                 ModelState.AddModelError(string.Empty, ErrorMessage);
                 return Page();
             }
 
-            var team = await _context.Teams.FindAsync(id);
-
-            if (team != null)
+            try
             {
-                Team = team;
-
-                if (!string.IsNullOrEmpty(Team.LogoPath))
+                // Eliminação Física do Logótipo (Ignorando a imagem padrão)
+                if (!string.IsNullOrEmpty(Team.LogoPath) && Team.LogoPath != "default_team.png")
                 {
-                    string filePath = Path.Combine(_environment.WebRootPath, "images", "logos", Team.LogoPath);
+                    string filePath = Path.Combine(_environment.WebRootPath, "images", "teams", Team.LogoPath);
 
                     if (System.IO.File.Exists(filePath))
                     {
@@ -114,9 +120,13 @@ namespace WebApp.Pages.Teams
 
                 _context.Teams.Remove(Team);
                 await _context.SaveChangesAsync();
-            }
 
-            return RedirectToPage("./Index");
+                return RedirectToPage("./Index");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Erro interno ao tentar eliminar a equipa. Contacte o administrador.");
+            }
         }
     }
 }
