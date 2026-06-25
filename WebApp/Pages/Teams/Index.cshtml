@@ -6,7 +6,11 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Equipas de E-Sports</h1>
-    <a asp-page="Create" class="btn btn-primary">Registar Nova Equipa</a>
+
+    @if (User.IsInRole("Admin") || User.IsInRole("Gestor"))
+    {
+        <a asp-page="Create" class="btn btn-primary">Registar Nova Equipa</a>
+    }
 </div>
 
 <table class="table table-striped table-hover shadow-sm align-middle">
@@ -18,7 +22,6 @@
         </tr>
     </thead>
     <tbody>
-        @* Renderiza a listagem através da propriedade pluralizada para evitar conflitos de tipo no escopo local *@
         @foreach (var item in Model.Teams)
         {
             <tr>
@@ -33,13 +36,12 @@
                     }
                 </td>
                 <td class="fw-bold fs-5">
-                    @* Acesso direto à propriedade de texto para mitigar avaliações circulares e recursividade de grafos *@
                     @item.Name
                 </td>
                 <td class="align-middle">
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex justify-content-center align-items-center gap-2">
 
-                        @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin"))
+                        @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin") && !User.IsInRole("Gestor"))
                         {
                             <form method="post" asp-page-handler="ToggleFavorite" asp-route-teamId="@item.Id" style="display:inline; margin:0;">
                                 @if (Model.UserFavoriteTeamIds.Contains(item.Id))
@@ -53,12 +55,12 @@
                             </form>
                         }
 
-                        <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Details</a>
+                        <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Detalhes</a>
 
-                        @if (User.IsInRole("Admin"))
+                        @if (Model.EditableTeamIds.Contains(item.Id))
                         {
-                            <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info">Edit</a>
-                            <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                            <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">Editar</a>
+                            <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a>
                         }
                     </div>
                 </td>

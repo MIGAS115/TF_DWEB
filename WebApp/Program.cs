@@ -24,7 +24,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 /// Configura o serviço Identity Framework para gestão integrada de autenticação e autorização.
 /// Inclui as regras exatas de password solicitadas no guia do professor.
 /// </summary>
-builder.Services.AddDefaultIdentity<MyUser>(options =>
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;

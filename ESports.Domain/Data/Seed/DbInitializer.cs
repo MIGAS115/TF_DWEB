@@ -13,73 +13,77 @@ namespace WebApp.Data.Seed
         /// <summary>
         /// Executa as migrações da base de dados e insere as regras, o administrador e as categorias/equipas se não existirem.
         /// </summary>
-        /// <param name="dbContext">Contexto da base de dados da aplicação.</param>
-        /// <param name="userManager">Gestor de utilizadores do ASP.NET Core Identity.</param>
-        /// <param name="roleManager">Gestor de perfis/roles do ASP.NET Core Identity.</param>
-        /// <returns>Uma Task representando a operação assíncrona.</returns>
-
         public static async Task Initialize(
             ApplicationDbContext dbContext,
-            UserManager<MyUser> userManager,
+            UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
             ArgumentNullException.ThrowIfNull(dbContext, nameof(dbContext));
             ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
             ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
 
-            // Forçar a criação da BD sem depender de Migrations
             dbContext.Database.EnsureCreated();
-
             bool haAdicao = false;
 
-            if (!await roleManager.RoleExistsAsync("Admin"))
+            // Roles
+            string[] roleNames = { "Admin", "Gestor", "User" };
+            foreach (var roleName in roleNames)
             {
-                await roleManager.CreateAsync(new IdentityRole("Admin"));
-            }
-            if (!await roleManager.RoleExistsAsync("RegularUser"))
-            {
-                await roleManager.CreateAsync(new IdentityRole("RegularUser"));
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                }
             }
 
+            // Utilizador Admin
             var defaultAdminEmail = "admin@esports.pt";
-            var adminUser = await userManager.FindByEmailAsync(defaultAdminEmail);
-
-            if (adminUser == null)
+            if (await userManager.FindByEmailAsync(defaultAdminEmail) == null)
             {
-                var identityAdmin = new Admin
+                var newIdentityAdmin = new IdentityUser
                 {
                     UserName = defaultAdminEmail,
                     Email = defaultAdminEmail,
-                    FullName = "Administrador Master",
                     EmailConfirmed = true,
                 };
 
-                var result = await userManager.CreateAsync(identityAdmin, "Admin_123!");
+                var result = await userManager.CreateAsync(newIdentityAdmin, "Admin_123!");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(identityAdmin, "Admin");
+                    await userManager.AddToRoleAsync(newIdentityAdmin, "Admin");
+
+                    var adminProfile = new Admin
+                    {
+                        FullName = "Administrador Master",
+                        PermissionLevel = "FullAccess",
+                        UserID = newIdentityAdmin.Id
+                    };
+
+                    dbContext.Admins.Add(adminProfile);
                     haAdicao = true;
                 }
             }
 
-            // 1. INSERIR CATEGORIAS PRIMEIRO (Obrigatório para podermos associar as equipas depois)
+            // Estruturas em Memória (Sem gravar na BD a meio)
+            Category? cs2Category = null;
+            Category? lolCategory = null;
+
             if (!await dbContext.Categories.AnyAsync())
             {
-                var categories = new[]
-                {
-                    new Category { Name = "CS2" },
-                    new Category { Name = "LOL" },
-                    new Category { Name = "DOTA2" }
-                };
-                await dbContext.Categories.AddRangeAsync(categories);
-                await dbContext.SaveChangesAsync(); // Guardar já para a BD gerar os IDs
-                haAdicao = false; // Reset à flag porque já fizemos SaveChanges
+                cs2Category = new Category { Name = "CS2" };
+                lolCategory = new Category { Name = "LOL" };
+                var dotaCategory = new Category { Name = "DOTA2" };
+
+                await dbContext.Categories.AddRangeAsync(cs2Category, lolCategory, dotaCategory);
+                haAdicao = true;
+            }
+            else
+            {
+                // Se já existem, vamos apenas buscá-las à BD para associar
+                cs2Category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "CS2");
+                lolCategory = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "LOL");
             }
 
-            // Ir buscar as categorias recém-criadas para associar às equipas
-            var cs2Category = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "CS2");
-            var lolCategory = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "LOL");
-
+            // Torneios
             if (!await dbContext.Tournaments.AnyAsync())
             {
                 var tournaments = new[]
@@ -92,18 +96,20 @@ namespace WebApp.Data.Seed
                 haAdicao = true;
             }
 
+            // Equipas (Usamos a propriedade de navegação em vez de forçar o ID logo à partida)
             if (!await dbContext.Teams.AnyAsync() && cs2Category != null && lolCategory != null)
             {
                 var teams = new[]
                 {
-                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true, CategoryFK = cs2Category.Id },
-                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true, CategoryFK = lolCategory.Id },
-                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true, CategoryFK = cs2Category.Id }
+                    new Team { Name = "Natus Vincere", LogoPath = "navi.png", IsManualOverride = true, Category = cs2Category },
+                    new Team { Name = "T1 Esports", LogoPath = "t1.png", IsManualOverride = true, Category = lolCategory },
+                    new Team { Name = "Team Liquid", LogoPath = "liquid.png", IsManualOverride = true, Category = cs2Category }
                 };
                 await dbContext.Teams.AddRangeAsync(teams);
                 haAdicao = true;
             }
 
+            // SaveChangesAsync no final para otimizar o I/O
             if (haAdicao)
             {
                 await dbContext.SaveChangesAsync();

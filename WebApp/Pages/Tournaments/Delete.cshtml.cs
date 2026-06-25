@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
 
@@ -8,7 +10,9 @@ namespace WebApp.Pages.Tournaments;
 
 /// <summary>
 /// PageModel responsável pela interface de validação relacional e deleção de torneios.
+/// Restrito a utilizadores com os cargos Admin ou Gestor, respeitando a propriedade do recurso (Ownership).
 /// </summary>
+[Authorize(Roles = "Admin,Gestor")]
 public class DeleteModel : PageModel
 {
     private readonly ApplicationDbContext _context;
@@ -30,9 +34,10 @@ public class DeleteModel : PageModel
 
     /// <summary>
     /// Recupera os dados do torneio para confirmação de exclusão pelo utilizador.
+    /// Valida se o utilizador autenticado tem permissão para o eliminar.
     /// </summary>
     /// <param name="id">Identificador do torneio.</param>
-    /// <returns>A página de confirmação ou NotFound.</returns>
+    /// <returns>A página de confirmação ou NotFound/Forbid.</returns>
     public async Task<IActionResult> OnGetAsync(int? id)
     {
         if (id == null || _context.Tournaments == null)
@@ -46,15 +51,22 @@ public class DeleteModel : PageModel
             return NotFound();
         }
 
+        // --- VALIDAÇÃO DE OWNERSHIP ---
+        var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole("Admin") && tournament.OwnerId != loggedInUserId)
+        {
+            return Forbid();
+        }
+
         Tournament = tournament;
         return Page();
     }
 
     /// <summary>
-    /// Avalia a integridade restritiva e processa a remoção do torneio se não contiver dependências.
+    /// Avalia a integridade restritiva, valida permissões e processa a remoção do torneio se não contiver dependências.
     /// </summary>
     /// <param name="id">Identificador do torneio a remover.</param>
-    /// <returns>Redirecionamento em caso de sucesso ou a mesma página com avisos de restrição.</returns>
+    /// <returns>Redirecionamento em caso de sucesso, página corrente com avisos ou Erro 500.</returns>
     public async Task<IActionResult> OnPostAsync(int? id)
     {
         if (id == null || _context.Tournaments == null)
@@ -68,6 +80,13 @@ public class DeleteModel : PageModel
             return NotFound();
         }
 
+        // Validação de Ownership (Segurança contra POST falsificado)
+        var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole("Admin") && tournament.OwnerId != loggedInUserId)
+        {
+            return Forbid();
+        }
+
         Tournament = tournament;
 
         var temJogosVinculados = await _context.Matches.AnyAsync(m => m.TournamentFK == id);
@@ -79,9 +98,15 @@ public class DeleteModel : PageModel
             return Page();
         }
 
-        _context.Tournaments.Remove(Tournament);
-        await _context.SaveChangesAsync();
-
-        return RedirectToPage("./Index");
+        try
+        {
+            _context.Tournaments.Remove(Tournament);
+            await _context.SaveChangesAsync();
+            return RedirectToPage("./Index");
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "Erro interno ao tentar eliminar o torneio. Contacte o administrador.");
+        }
     }
 }
