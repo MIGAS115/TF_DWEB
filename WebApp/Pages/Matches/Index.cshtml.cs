@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using ESports.Domain.Data;
+﻿using ESports.Domain.Data;
 using ESports.Domain.Models;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace WebApp.Pages.Matches;
 
@@ -27,6 +28,11 @@ public class IndexModel : PageModel
     public IList<Match> Match { get; set; } = default!;
 
     /// <summary>
+    /// Conjunto de IDs de jogos que o utilizador autenticado tem permissão para modificar.
+    /// </summary>
+    public HashSet<int> EditableMatchIds { get; set; } = new HashSet<int>();
+
+    /// <summary>
     /// Método executado ao carregar a página, responsável por ir buscar os jogos à base de dados.
     /// </summary>
     public async Task OnGetAsync()
@@ -39,6 +45,20 @@ public class IndexModel : PageModel
                 .Include(m => m.Tournament)
                 .OrderByDescending(m => m.MatchDate)
                 .ToListAsync();
+
+            // Lógica de permissões para UI
+            var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+            var isGestor = User.IsInRole("Gestor");
+
+            foreach (var match in Match)
+            {
+                // Permissão: Admin ou o Gestor que criou o registo (Ownership)
+                if (isAdmin || (isGestor && !string.IsNullOrEmpty(loggedInUserId) && match.OwnerId == loggedInUserId))
+                {
+                    EditableMatchIds.Add(match.Id);
+                }
+            }
         }
     }
 }

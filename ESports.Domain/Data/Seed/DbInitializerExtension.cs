@@ -14,7 +14,6 @@ public static class DbInitializerExtension
 {
     /// <summary>
     /// Cria o escopo de injeção de dependências e invoca a população da base de dados.
-    /// Respeita a convenção de nomenclatura e tratamento de erros do guia de estilo.
     /// </summary>
     /// <param name="app">Interface do construtor de aplicações web.</param>
     /// <returns>O IApplicationBuilder configurado para encadeamento de chamadas.</returns>
@@ -28,8 +27,7 @@ public static class DbInitializerExtension
         try
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
-
-            var userManager = services.GetRequiredService<UserManager<MyUser>>();
+            var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
             DbInitializer.Initialize(context, userManager, roleManager).GetAwaiter().GetResult();

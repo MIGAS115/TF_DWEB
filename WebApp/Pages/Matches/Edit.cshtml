@@ -13,6 +13,8 @@
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <input type="hidden" asp-for="Match.Id" />
+            <input type="hidden" asp-for="Match.OwnerId" />
+            <input type="hidden" asp-for="Match.IsManualOverride" />
 
             <div class="form-group mb-3">
                 <label asp-for="Match.MatchDate" class="control-label fw-bold">Data e Hora do Jogo</label>
@@ -22,19 +24,25 @@
 
             <div class="form-group mb-3">
                 <label asp-for="Match.HomeTeamFK" class="control-label fw-bold">Equipa da Casa</label>
-                <select asp-for="Match.HomeTeamFK" class="form-control" asp-items="ViewBag.HomeTeamFK"></select>
+                <select asp-for="Match.HomeTeamFK" class="form-control" asp-items="ViewBag.HomeTeamFK">
+                    <option value="">-- Selecione a Equipa da Casa --</option>
+                </select>
                 <span asp-validation-for="Match.HomeTeamFK" class="text-danger"></span>
             </div>
 
             <div class="form-group mb-3">
                 <label asp-for="Match.AwayTeamFK" class="control-label fw-bold">Equipa Visitante</label>
-                <select asp-for="Match.AwayTeamFK" class="form-control" asp-items="ViewBag.AwayTeamFK"></select>
+                <select asp-for="Match.AwayTeamFK" class="form-control" asp-items="ViewBag.AwayTeamFK">
+                    <option value="">-- Selecione a Equipa Visitante --</option>
+                </select>
                 <span asp-validation-for="Match.AwayTeamFK" class="text-danger"></span>
             </div>
 
             <div class="form-group mb-4">
                 <label asp-for="Match.TournamentFK" class="control-label fw-bold">Torneio / Competição</label>
-                <select asp-for="Match.TournamentFK" class="form-control" asp-items="ViewBag.TournamentFK"></select>
+                <select asp-for="Match.TournamentFK" class="form-control" asp-items="ViewBag.TournamentFK">
+                    <option value="">-- Selecione o Torneio --</option>
+                </select>
                 <span asp-validation-for="Match.TournamentFK" class="text-danger"></span>
             </div>
 

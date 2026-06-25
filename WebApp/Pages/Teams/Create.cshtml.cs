@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
 
@@ -11,25 +12,17 @@ namespace WebApp.Pages.Teams;
 
 /// <summary>
 /// PageModel responsável pela lógica de criação de novas equipas no sistema.
+/// Restrito a utilizadores com cargos de gestão.
 /// </summary>
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Gestor")]
 public class CreateModel : PageModel
 {
-    /// <summary>
-    /// Contexto de acesso à base de dados do projeto.
-    /// </summary>
     private readonly ApplicationDbContext _context;
-
-    /// <summary>
-    /// Ambiente de alojamento web para obtenção dos caminhos físicos do servidor.
-    /// </summary>
     private readonly IWebHostEnvironment _environment;
 
     /// <summary>
     /// Construtor do PageModel com injeção de dependências.
     /// </summary>
-    /// <param name="context">Contexto da base de dados.</param>
-    /// <param name="environment">Ambiente de alojamento web.</param>
     public CreateModel(ApplicationDbContext context, IWebHostEnvironment environment)
     {
         _context = context;
@@ -37,37 +30,44 @@ public class CreateModel : PageModel
     }
 
     /// <summary>
-    /// Propriedade que armazena os dados da equipa a ser criada, vinculada ao formulário.
+    /// Propriedade que armazena os dados da equipa a ser criada.
     /// </summary>
     [BindProperty]
     public Team Team { get; set; } = null!;
 
     /// <summary>
-    /// Propriedade temporária que recebe o ficheiro de imagem do logótipo enviado via formulário.
+    /// Ficheiro de imagem do logótipo submetido.
     /// </summary>
     [BindProperty]
     public IFormFile? LogoFile { get; set; }
 
     /// <summary>
-    /// Disponibiliza e inicializa a página com o formulário de criação.
+    /// Lista de categorias disponíveis para associar à equipa.
     /// </summary>
-    /// <returns>O resultado da página Razor.</returns>
+    public SelectList CategoryList { get; set; } = default!;
+
+    /// <summary>
+    /// Disponibiliza e inicializa a página com o formulário, carregando os dados relacionais.
+    /// </summary>
     public IActionResult OnGet()
     {
+        // Prepara a dropdown de categorias para o utilizador escolher (CS2, LOL, etc.)
+        CategoryList = new SelectList(_context.Categories, "Id", "Name");
         return Page();
     }
 
     /// <summary>
-    /// Processa a submissão do formulário via HTTP POST, realiza o upload do ficheiro e persiste a entidade.
+    /// Processa o upload da imagem, sanitiza os dados e persiste a entidade garantindo ownership.
     /// </summary>
-    /// <returns>Redirecionamento para o Index em caso de sucesso; caso contrário, recarrega a página com validações.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid || _context.Teams == null || Team == null)
         {
+            CategoryList = new SelectList(_context.Categories, "Id", "Name");
             return Page();
         }
 
+        // Processamento do Upload conforme regras do guia de estilo
         if (LogoFile != null && LogoFile.Length > 0)
         {
             var fileExtension = Path.GetExtension(LogoFile.FileName).ToLowerInvariant();
@@ -75,7 +75,8 @@ public class CreateModel : PageModel
 
             if (!extensoesPermitidas.Contains(fileExtension))
             {
-                ModelState.AddModelError(string.Empty, "O ficheiro enviado não é uma imagem válida (.jpg, .jpeg, .png, .gif, .svg).");
+                ModelState.AddModelError(string.Empty, "O ficheiro enviado não é uma imagem válida.");
+                CategoryList = new SelectList(_context.Categories, "Id", "Name");
                 return Page();
             }
 
@@ -101,11 +102,19 @@ public class CreateModel : PageModel
             Team.LogoPath = "default_team.png";
         }
 
+        // Atribuição de regras de negócio e Ownership de segurança
         Team.IsManualOverride = true;
+        Team.OwnerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        _context.Teams.Add(Team);
-        await _context.SaveChangesAsync();
-
-        return RedirectToPage("./Index");
+        try
+        {
+            _context.Teams.Add(Team);
+            await _context.SaveChangesAsync();
+            return RedirectToPage("./Index");
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "Erro interno ao guardar equipa. Contacte o administrador.");
+        }
     }
 }

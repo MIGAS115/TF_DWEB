@@ -30,6 +30,8 @@
 
 <form method="post" class="d-flex gap-2">
     <input type="hidden" asp-for="Match.Id" />
+    <input type="hidden" asp-for="Match.OwnerId" />
+
     <input type="submit" value="Confirmar Eliminação" class="btn btn-danger" />
     <a asp-page="./Index" class="btn btn-outline-secondary">Cancelar e Voltar</a>
 </form>

@@ -10,6 +10,7 @@
 <div class="row">
     <div class="col-md-6">
         <form method="post" class="card p-4 shadow-sm">
+            <input type="hidden" asp-for="Match.OwnerId" value="0" />
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="form-group mb-3">

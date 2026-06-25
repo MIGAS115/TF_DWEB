@@ -20,7 +20,7 @@ namespace ESports.Domain.Models
         [Required(ErrorMessage = "O preenchimento do campo {0} é obrigatório.")]
         [ForeignKey(nameof(Normal))]
         [Display(Name = "Identificador do Utilizador")]
-        public string NormalFK { get; set; } = null!;
+        public int NormalFK { get; set; }
 
         /// <summary>
         /// Propriedade de navegação para a entidade do Utilizador Normal associado.
