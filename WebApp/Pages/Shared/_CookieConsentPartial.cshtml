@@ -1,0 +1,34 @@
+﻿@* /// <summary>
+/// Componente de interface para gestão de consentimento de cookies.
+/// Garante conformidade com as regras de usabilidade da UC, incluindo opções binárias.
+/// </summary>
+*@
+<div id="cookieConsent" class="fixed bottom-0 w-full bg-gray-800 text-white p-4 justify-between items-center" style="display: none; z-index: 9999;">
+    <span>Utilizamos cookies para melhorar a experiência na plataforma E-Sports IPT.</span>
+    <div style="display: flex; gap: 10px;">
+        <button onclick="acceptCookies()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded transition-colors" style="background-color: #007bff; border: none; color: white; padding: 8px 16px; cursor: pointer;">
+            Aceitar
+        </button>
+        <button onclick="declineCookies()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded transition-colors" style="background-color: #6c757d; border: none; color: white; padding: 8px 16px; cursor: pointer;">
+            Recusar
+        </button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        if (document.cookie.indexOf("CookieConsent=true") === -1 && document.cookie.indexOf("CookieConsent=false") === -1) {
+            document.getElementById('cookieConsent').style.display = 'flex';
+        }
+    })();
+
+    function acceptCookies() {
+        document.cookie = "CookieConsent=true; path=/; max-age=31536000";
+        document.getElementById('cookieConsent').style.display = 'none';
+    }
+
+    function declineCookies() {
+        document.cookie = "CookieConsent=false; path=/; max-age=31536000";
+        document.getElementById('cookieConsent').style.display = 'none';
+    }
+</script>

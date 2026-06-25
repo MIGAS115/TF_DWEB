@@ -47,6 +47,7 @@ builder.Services.AddSession(options =>
 /// Regista os serviços subjacentes ao modelo MVC com foco exclusivo no pipeline das Razor Pages.
 /// </summary>
 builder.Services.AddRazorPages();
+builder.Services.AddControllers();
 
 /// <summary>
 /// Regista o serviço SignalR para permitir comunicação bidirecional em tempo real,
@@ -55,6 +56,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<PandaScoreWorker>();
+
+
 var app = builder.Build();
 
 /// <summary>
@@ -75,12 +78,15 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCookiePolicy();
 app.UseRouting();
+
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+app.MapControllers();
 
 /// <summary>
 /// Mapeia o endpoint do SignalR para o MatchHub, permitindo que os clientes Web
