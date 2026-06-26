@@ -9,6 +9,26 @@
     <p class="lead text-muted text-sm">Acompanha os resultados em tempo real do CS2, League of Legends e Dota 2.</p>
 </div>
 
+<!-- Secção de Filtragem -->
+<div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
+    <a asp-page="./Index" asp-route-filtroEstado=""
+       class="btn btn-sm @(string.IsNullOrEmpty(Model.FiltroEstado) ? "btn-primary" : "btn-outline-primary")">
+        Todos
+    </a>
+    <a asp-page="./Index" asp-route-filtroEstado="running"
+       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "running" ? "btn-success" : "btn-outline-success")">
+        Em-Direto
+    </a>
+    <a asp-page="./Index" asp-route-filtroEstado="not_started"
+       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "not_started" ? "btn-secondary" : "btn-outline-secondary")">
+        Agendado
+    </a>
+    <a asp-page="./Index" asp-route-filtroEstado="finished"
+       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "finished" ? "btn-dark" : "btn-outline-dark")">
+        Terminado
+    </a>
+</div>
+
 <div class="row row-cols-1 row-cols-md-3 g-3" id="matches-container">
     @if (Model.ExistingMatches.Any())
     {
@@ -40,7 +60,7 @@
             <div class="spinner-border text-primary mb-3" role="status">
                 <span class="visually-hidden">A carregar...</span>
             </div>
-            <p class="text-sm">A estabelecer ligação à arena e a aguardar dados de jogos ao vivo...</p>
+            <p class="text-sm">Nenhum jogo encontrado para o filtro selecionado...</p>
         </div>
     }
 </div>
@@ -50,18 +70,19 @@
     <nav class="d-flex justify-content-center mt-5 mb-4">
         <ul class="pagination pagination-sm shadow-sm">
             <li class="page-item @(Model.PaginaAtual == 1 ? "disabled" : "")">
-                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)">Anterior</a>
+                <!-- Mantemos o filtro selecionado na navegação -->
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)" asp-route-filtroEstado="@Model.FiltroEstado">Anterior</a>
             </li>
 
             @for (int i = 1; i <= Model.TotalPaginas; i++)
             {
                 <li class="page-item @(Model.PaginaAtual == i ? "active" : "")">
-                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i">@i</a>
+                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i" asp-route-filtroEstado="@Model.FiltroEstado">@i</a>
                 </li>
             }
 
             <li class="page-item @(Model.PaginaAtual == Model.TotalPaginas ? "disabled" : "")">
-                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)">Seguinte</a>
+                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)" asp-route-filtroEstado="@Model.FiltroEstado">Seguinte</a>
             </li>
         </ul>
     </nav>
@@ -99,7 +120,12 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const pagina = urlParams.get('paginaAtual') || "1";
+            // Nota: Se houver um filtro ativo que não "running/em direto", poderemos não querer adicionar o card.
+            const filtroAtual = urlParams.get('filtroEstado');
+
             if (pagina !== "1") return;
+            // Se o filtro for Terminado ou Agendado, ignoramos os novos jogos Live que o SignalR manda
+            if (filtroAtual && filtroAtual.toLowerCase() !== "running") return;
 
             if (document.getElementById(`match-${matchId}`)) return;
 
@@ -123,7 +149,7 @@
                                 <h3 class="away-score text-danger mx-3 fw-bold mb-0">0</h3>
                             </div>
                             <div class="mt-2">
-                                <span class="badge bg-success px-2 py-1 text-xs match-status">LIVE</span>
+                                <span class="badge bg-success px-2 py-1 text-xs match-status">RUNNING</span>
                             </div>
                         </div>
                     </div>

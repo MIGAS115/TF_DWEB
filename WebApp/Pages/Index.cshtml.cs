@@ -12,7 +12,7 @@ namespace WebApp.Pages;
 
 /// <summary>
 /// Modelo de página para o Dashboard inicial (Home).
-/// Gerencia a listagem de jogos aplicando regras de paginação e usabilidade.
+/// Gerencia a listagem de jogos aplicando regras de paginação, filtragem e usabilidade.
 /// </summary>
 public class IndexModel : PageModel
 {
@@ -39,26 +39,47 @@ public class IndexModel : PageModel
     public int PaginaAtual { get; set; } = 1;
 
     /// <summary>
-    /// Obtém ou define o total de páginas disponíveis com base nos registos existentes.
+    /// Obtém ou define o filtro de estado atual para a listagem (ex: running, not_started, finished).
+    /// </summary>
+    [BindProperty(SupportsGet = true)]
+    public string? FiltroEstado { get; set; }
+
+    /// <summary>
+    /// Obtém ou define o total de páginas disponíveis com base nos registos existentes e filtrados.
     /// </summary>
     public int TotalPaginas { get; set; }
 
     /// <summary>
-    /// Processa o pedido HTTP GET inicial carregando os jogos paginados.
+    /// Processa o pedido HTTP GET inicial carregando os jogos paginados e filtrados.
     /// </summary>
     /// <param name="paginaAtual">Parâmetro opcional para navegar entre páginas.</param>
-    public async Task OnGetAsync(int? paginaAtual)
+    /// <param name="filtroEstado">Parâmetro opcional para filtrar os jogos pelo estado (PandaScore).</param>
+    public async Task OnGetAsync(int? paginaAtual, string? filtroEstado)
     {
         if (paginaAtual.HasValue && paginaAtual.Value > 0)
         {
             PaginaAtual = paginaAtual.Value;
         }
 
+        FiltroEstado = filtroEstado;
+
         // Define quantos cartões queres mostrar por ecrã (ex: 9 ou 12 para grelhas de 3 colunas)
         int tamanhoPagina = 9;
 
-        // Conta o total de registos para calcular as páginas necessárias
-        int totalRegistos = await _context.Matches.CountAsync();
+        // Inicia a construção da query base (IQueryable permite adiar a execução na BD)
+        IQueryable<Match> query = _context.Matches
+            .Include(m => m.HomeTeam)
+            .Include(m => m.AwayTeam)
+            .Include(m => m.Tournament);
+
+        // Aplica o filtro de estado se existir seleção por parte do utilizador
+        if (!string.IsNullOrEmpty(FiltroEstado))
+        {
+            query = query.Where(m => m.Status.ToUpper() == FiltroEstado.ToUpper());
+        }
+
+        // Conta o total de registos FILTRADOS para calcular as páginas necessárias
+        int totalRegistos = await query.CountAsync();
         TotalPaginas = (int)Math.Ceiling(totalRegistos / (double)tamanhoPagina);
 
         // Garante que o utilizador não tenta aceder a páginas fora dos limites
@@ -67,11 +88,8 @@ public class IndexModel : PageModel
             PaginaAtual = TotalPaginas;
         }
 
-        // Aplica Skip e Take de forma eficiente na BD via EF Core e LINQ
-        ExistingMatches = await _context.Matches
-            .Include(m => m.HomeTeam)
-            .Include(m => m.AwayTeam)
-            .Include(m => m.Tournament)
+        // Aplica ordenação, Skip e Take de forma eficiente na BD via EF Core e LINQ
+        ExistingMatches = await query
             .OrderByDescending(m => m.MatchDate)
             .Skip((PaginaAtual - 1) * tamanhoPagina)
             .Take(tamanhoPagina)
