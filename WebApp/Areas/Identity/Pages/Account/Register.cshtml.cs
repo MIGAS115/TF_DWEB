@@ -1,5 +1,6 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -8,7 +9,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
-using ESports.Domain.Models; // Importação correta do teu modelo MyUser
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -22,15 +22,15 @@ namespace WebApp.Areas.Identity.Pages.Account
 {
     /// <summary>
     /// Modelo de suporte à página de registo de novos utilizadores na plataforma de e-Sports.
-    /// Gerencia a criação de instâncias de <see cref="MyUser"/> e o envio do token de confirmação por e-mail.
+    /// Gerencia a criação de instâncias de segurança IdentityUser e o envio do token de confirmação por e-mail.
     /// </summary>
     [AllowAnonymous]
     public class RegisterModel : PageModel
     {
-        private readonly SignInManager<MyUser> _signInManager;
-        private readonly UserManager<MyUser> _userManager;
-        private readonly IUserStore<MyUser> _userStore;
-        private readonly IUserEmailStore<MyUser> _emailStore;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IUserStore<IdentityUser> _userStore;
+        private readonly IUserEmailStore<IdentityUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
 
@@ -38,9 +38,9 @@ namespace WebApp.Areas.Identity.Pages.Account
         /// Inicializa uma nova instância de <see cref="RegisterModel"/> com os serviços injetados pelo pipeline do sistema.
         /// </summary>
         public RegisterModel(
-            UserManager<MyUser> userManager,
-            IUserStore<MyUser> userStore,
-            SignInManager<MyUser> signInManager,
+            UserManager<IdentityUser> userManager,
+            IUserStore<IdentityUser> userStore,
+            SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender)
         {
@@ -165,28 +165,27 @@ namespace WebApp.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private MyUser CreateUser()
+        private IdentityUser CreateUser()
         {
             try
             {
-                return Activator.CreateInstance<MyUser>();
+                return Activator.CreateInstance<IdentityUser>();
             }
             catch (Exception ex)
             {
-                // Regra do professor: Tratamento limpo e controlado em vez de throws cruas expostas em produção
-                _logger.LogError(ex, "Erro ao instanciar a classe de utilizador.");
-                throw new InvalidOperationException($"Não foi possível criar uma instância de '{nameof(MyUser)}'. " +
+                _logger.LogError(ex, "Erro ao instanciar a classe de utilizador de segurança.");
+                throw new InvalidOperationException($"Não foi possível criar uma instância de '{nameof(IdentityUser)}'. " +
                     $"Garanta que a classe não é abstrata e possui um construtor sem parâmetros.");
             }
         }
 
-        private IUserEmailStore<MyUser> GetEmailStore()
+        private IUserEmailStore<IdentityUser> GetEmailStore()
         {
             if (!_userManager.SupportsUserEmail)
             {
                 throw new NotSupportedException("O suporte padrão de interface requer um repositório de utilizadores com suporte para e-mail.");
             }
-            return (IUserEmailStore<MyUser>)_userStore;
+            return (IUserEmailStore<IdentityUser>)_userStore;
         }
     }
 }

@@ -17,7 +17,7 @@ public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     /// </summary>
     /// <param name="options">Opções de configuração do DbContext.</param>
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
+    : base(options)
     {
     }
 
