@@ -3,32 +3,40 @@
 @{
     ViewData["Title"] = "Dashboard de Jogos ao Vivo";
 }
-
 <div class="text-center mb-4 mt-4">
     <h1 class="display-5 fw-bold text-primary">Live E-Sports</h1>
     <p class="lead text-muted text-sm">Acompanha os resultados em tempo real do CS2, League of Legends e Dota 2.</p>
-</div>
+</div><!-- Secção de Filtragem --><div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
+<a asp-page="./Index" asp-route-filtroEstado=""
+   class="btn btn-sm @(string.IsNullOrEmpty(Model.FiltroEstado) ? "btn-primary" : "btn-outline-primary")">
+    Todos
+</a>
+<a asp-page="./Index" asp-route-filtroEstado="running"
+   class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "running" ? "btn-success" : "btn-outline-success")">
+    Em-Direto
+</a>
+<a asp-page="./Index" asp-route-filtroEstado="not_started"
+   class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "not_started" ? "btn-secondary" : "btn-outline-secondary")">
+    Agendado
+</a>
+<a asp-page="./Index" asp-route-filtroEstado="finished"
+   class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "finished" ? "btn-dark" : "btn-outline-dark")">
+    Terminado
+    <a asp-page="./Index" asp-route-filtroCategoria="csgo" asp-route-filtroEstado="@Model.FiltroEstado"
+       class="btn btn-sm @(Model.FiltroCategoria == "CS2" ? "btn-primary" : "btn-outline-primary")">CS2</a>
 
-<!-- Secção de Filtragem -->
-<div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
-    <a asp-page="./Index" asp-route-filtroEstado=""
-       class="btn btn-sm @(string.IsNullOrEmpty(Model.FiltroEstado) ? "btn-primary" : "btn-outline-primary")">
-        Todos
-    </a>
-    <a asp-page="./Index" asp-route-filtroEstado="running"
-       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "running" ? "btn-success" : "btn-outline-success")">
-        Em-Direto
-    </a>
-    <a asp-page="./Index" asp-route-filtroEstado="not_started"
-       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "not_started" ? "btn-secondary" : "btn-outline-secondary")">
-        Agendado
-    </a>
-    <a asp-page="./Index" asp-route-filtroEstado="finished"
-       class="btn btn-sm @(Model.FiltroEstado?.ToLower() == "finished" ? "btn-dark" : "btn-outline-dark")">
-        Terminado
-    </a>
-</div>
+    <a asp-page="./Index" asp-route-filtroCategoria="dota2" asp-route-filtroEstado="@Model.FiltroEstado"
+       class="btn btn-sm @(Model.FiltroCategoria == "Dota2" ? "btn-primary" : "btn-outline-primary")">Dota 2</a>
 
+    <a asp-page="./Index" asp-route-filtroCategoria="LOL" asp-route-filtroEstado="@Model.FiltroEstado"
+       class="btn btn-sm @(Model.FiltroCategoria == "LOL" ? "btn-primary" : "btn-outline-primary")">LoL</a>
+
+    <a asp-page="./Index" asp-route-apenasFavoritos="true" asp-route-filtroEstado="@Model.FiltroEstado"
+       class="btn btn-sm @(Model.ApenasFavoritos ? "btn-warning" : "btn-outline-warning")">
+         Favoritos
+    </a>
+</a>
+</div>
 <div class="row g-4" id="matches-container">
     @if (Model.ExistingMatches.Any())
     {
