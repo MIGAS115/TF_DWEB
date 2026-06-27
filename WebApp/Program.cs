@@ -33,7 +33,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 /// </summary>
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
+    options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 6;
 })
