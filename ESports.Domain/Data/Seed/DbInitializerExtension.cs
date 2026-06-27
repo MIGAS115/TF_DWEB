@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.AspNetCore.Builder;
+namespace WebApp.Data.Seed;
 
 /// <summary>
 /// Classe de extensão para expor a inicialização do Seed no pipeline do Program.cs de forma síncrona.
@@ -30,7 +30,7 @@ public static class DbInitializerExtension
             var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-            DbInitializer.Initialize(context, userManager, roleManager).GetAwaiter().GetResult();
+            object value = DbInitializer.Initialize(context, userManager, roleManager).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {

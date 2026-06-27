@@ -1,12 +1,9 @@
-using System;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using WebApp.Data.Seed;
 using WebApp.Hubs;
 using WebApp.Services.PandaScore;
 
@@ -17,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 /// Valida a existência da connection string, requisito essencial para a persistência e integridade dos dados.
 /// </summary>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string not found.");
+    ?? throw new InvalidOperationException("A connection string 'DefaultConnection' não foi encontrada na configuração da aplicação.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
@@ -28,7 +25,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 /// Configura o serviço Identity Framework para gestão integrada de autenticação e autorização.
 /// Inclui as regras exatas de password solicitadas no guia do professor.
 /// </summary>
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+builder.Services.AddDefaultIdentity<MyUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;
@@ -37,8 +34,11 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+/// <summary>
+/// Regista o serviço de envio de e-mails customizado da plataforma.
+/// Essencial para processar a confirmação de contas em conformidade com as restrições do Identity.
+/// </summary>
+builder.Services.AddTransient<IEmailSender, IEmailSender>();
 
 /// <summary>
 /// Configura os serviços de estado de sessão HTTP obrigatórios da plataforma com expiração rígida.
@@ -51,19 +51,17 @@ builder.Services.AddSession(options =>
 });
 
 /// <summary>
+/// Regista os serviços subjacentes ao modelo MVC com foco exclusivo no pipeline das Razor Pages.
+/// </summary>
+builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+
+/// <summary>
 /// Regista o serviço SignalR para permitir comunicação bidirecional em tempo real,
 /// essencial para a atualização dos resultados dos jogos na interface.
 /// </summary>
 builder.Services.AddSignalR();
-
-/// <summary>
-/// Configura a fábrica de clientes HTTP para consumo de serviços externos.
-/// </summary>
 builder.Services.AddHttpClient();
-
-/// <summary>
-/// Regista o serviço em segundo plano responsável pela sincronização de dados com a API PandaScore.
-/// </summary>
 builder.Services.AddHostedService<PandaScoreWorker>();
 
 var app = builder.Build();

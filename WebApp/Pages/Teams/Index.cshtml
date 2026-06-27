@@ -28,7 +28,7 @@
                 <td class="text-center">
                     @if (!string.IsNullOrEmpty(item.LogoPath))
                     {
-                        <img src="~/images/@item.LogoPath" alt="Logótipo de @item.Name" class="img-thumbnail" style="max-width: 50px; max-height: 50px;" />
+                        <img src="~/images/teams/@item.LogoPath" alt="Logo @item.Name" style="max-height: 40px; max-width: 60px; object-fit: contain;" />
                     }
                     else
                     {
@@ -39,7 +39,7 @@
                     @item.Name
                 </td>
                 <td class="align-middle">
-                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                    <div class="d-flex justify-content-center align-items-center gap-2">
 
                         @if (User.Identity?.IsAuthenticated == true && !User.IsInRole("Admin") && !User.IsInRole("Gestor"))
                         {
@@ -68,23 +68,3 @@
         }
     </tbody>
 </table>
-
-@if (Model.TotalPaginas > 1)
-{
-    <nav class="d-flex justify-content-center mt-4">
-        <ul class="pagination pagination-sm shadow-sm">
-            <li class="page-item @(Model.PaginaAtual == 1 ? "disabled" : "")">
-                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual - 1)">Anterior</a>
-            </li>
-            @for (int i = 1; i <= Model.TotalPaginas; i++)
-            {
-                <li class="page-item @(Model.PaginaAtual == i ? "active" : "")">
-                    <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@i">@i</a>
-                </li>
-            }
-            <li class="page-item @(Model.PaginaAtual == Model.TotalPaginas ? "disabled" : "")">
-                <a class="page-link" asp-page="./Index" asp-route-paginaAtual="@(Model.PaginaAtual + 1)">Seguinte</a>
-            </li>
-        </ul>
-    </nav>
-}
