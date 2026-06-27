@@ -12,6 +12,8 @@ using WebApp.Hubs;
 using WebApp.Services.Email;
 using WebApp.Services.PandaScore;
 using WebApp.Data;
+using Microsoft.EntityFrameworkCore.Sqlite;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,8 +24,15 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string not found.");
 
+// Obtém o caminho da raiz do projeto (onde a aplicação está a correr)
+var caminhoBase = builder.Environment.ContentRootPath;
+
+// Constrói o caminho para o ficheiro da base de dados
+var caminhoCompleto = Path.Combine(caminhoBase, "esports.db");
+
+// Configura o SQLite para usar esse caminho
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlite($"Data Source={caminhoCompleto}"));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
