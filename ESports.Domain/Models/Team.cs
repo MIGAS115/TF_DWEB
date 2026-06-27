@@ -65,5 +65,12 @@ namespace ESports.Domain.Models
         /// Coleção de favoritos associados à equipa (Relação N:N).
         /// </summary>
         public ICollection<Favorite> FavoritedBy { get; set; } = [];
+
+        /// <summary>
+        /// Identificador único (ID do Identity) do utilizador que criou e detém a propriedade do registo.
+        /// Essencial para a validação lógica de autorização baseada em recursos (Ownership).
+        /// </summary>
+        [Display(Name = "Identificador do Proprietário")]
+        public string? OwnerId { get; set; }
     }
 }

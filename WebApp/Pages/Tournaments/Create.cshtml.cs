@@ -1,13 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
+using System.Security.Claims;
+using System.Globalization;
 
 namespace WebApp.Pages.Tournaments;
 
 /// <summary>
 /// PageModel responsável por processar a criação de novos torneios no sistema.
+/// Restrito a utilizadores com o cargo de Admin ou Gestor.
 /// </summary>
+[Authorize(Roles = "Admin,Gestor")]
 public class CreateModel : PageModel
 {
     private readonly ApplicationDbContext _context;
@@ -37,42 +42,28 @@ public class CreateModel : PageModel
     public Tournament Tournament { get; set; } = default!;
 
     /// <summary>
-    /// Valida e persiste o novo torneio na base de dados.
+    /// Valida, sanitiza os decimais e persiste o novo torneio na base de dados, associando-o ao utilizador logado.
     /// </summary>
-    /// <returns>Redirecionamento para a listagem ou recarregamento em caso de erro.</returns>
+    /// <returns>Redirecionamento para a listagem ou mensagem de erro 500 em caso de falha.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
-        // Bloqueio temporário para ler os erros no terminal do dotnet run
-        if (!ModelState.IsValid)
-        {
-            foreach (var modelState in ModelState.Values)
-            {
-                foreach (var error in modelState.Errors)
-                {
-                    Console.WriteLine($"[ERRO DE VALIDAÇÃO]: {error.ErrorMessage}");
-                }
-            }
-        }
-        // 1. Validar e converter o PrizePoolAux de forma condicional (Padrão de Localização pt-PT do Professor)
+        // 1. Validar e converter o PrizePoolAux (Padrão de Localização pt-PT)
         if (!string.IsNullOrWhiteSpace(Tournament.PrizePoolAux))
         {
             try
             {
-                // Sanitiza pontos/vírgulas e converte usando a cultura pt-PT
                 Tournament.PrizePool = Convert.ToDecimal(
                     Tournament.PrizePoolAux.Replace('.', ','),
-                    new System.Globalization.CultureInfo("pt-PT")
+                    new CultureInfo("pt-PT")
                 );
             }
             catch
             {
-                // Se falhar a conversão, adiciona o erro ao ModelState para ser exibido na View
                 ModelState.AddModelError("Tournament.PrizePoolAux", "O valor introduzido para o Prémio Total é inválido.");
             }
         }
         else
         {
-            // Se o campo foi deixado em branco, o prémio fica explicitamente nulo (ou 0, conforme a BD)
             Tournament.PrizePool = null;
         }
 
@@ -81,16 +72,25 @@ public class CreateModel : PageModel
         {
             return Page();
         }
-        if (!ModelState.IsValid || _context.Tournaments == null || Tournament == null)
-        {
-            return Page();
-        }
 
+        // 3. Associar as métricas de controlo e ownership
         Tournament.IsManualOverride = true;
 
-        _context.Tournaments.Add(Tournament);
-        await _context.SaveChangesAsync();
+        // Captura o ID do utilizador autenticado e associa-o como Dono do Torneio
+        // (Nota: Garante que a tua classe Tournament em ESports.Domain.Models tem a propriedade public string? OwnerId { get; set; })
+        Tournament.OwnerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        return RedirectToPage("./Index");
+        // 4. Gravação segura com tratamento de erros limpo
+        try
+        {
+            _context.Tournaments.Add(Tournament);
+            await _context.SaveChangesAsync();
+            return RedirectToPage("./Index");
+        }
+        catch (Exception)
+        {
+            // Oculta a stack trace em produção conforme as regras
+            return StatusCode(500, "Erro interno ao criar torneio. Contacte o administrador.");
+        }
     }
 }

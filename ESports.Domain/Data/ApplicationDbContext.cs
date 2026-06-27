@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ESports.Domain.Models;
 
@@ -6,9 +7,10 @@ namespace ESports.Domain.Data;
 
 /// <summary>
 /// Contexto principal da base de dados responsável pelo mapeamento das entidades e gestão do sistema de autenticação Identity.
-/// Unifica as tabelas de Autenticação (Identity, herdadas via MyUser) e as tabelas de Negócio num único local.
+/// Implementa uma arquitetura desacoplada onde o Identity gerencia estritamente a segurança física (IdentityUser)
+/// e as tabelas de domínio gerem o perfil de negócio dos utilizadores.
 /// </summary>
-public class ApplicationDbContext : IdentityDbContext<MyUser>
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     /// <summary>
     /// Construtor do contexto da base de dados que encaminha as opções de configuração para a classe base.
@@ -20,12 +22,17 @@ public class ApplicationDbContext : IdentityDbContext<MyUser>
     }
 
     /// <summary>
-    /// Tabela representativa dos utilizadores com privilégios de Administração.
+    /// Tabela base representativa de todos os utilizadores no contexto de negócio da plataforma.
+    /// </summary>
+    public DbSet<MyUser> AppUsers { get; set; } = null!;
+
+    /// <summary>
+    /// Filtro de tabela focado nos utilizadores com privilégios de Administração.
     /// </summary>
     public DbSet<Admin> Admins { get; set; } = null!;
 
     /// <summary>
-    /// Tabela representativa dos utilizadores regulares/normais da plataforma.
+    /// Filtro de tabela focado nos utilizadores regulares/normais da plataforma.
     /// </summary>
     public DbSet<RegularUser> RegularUsers { get; set; } = null!;
 

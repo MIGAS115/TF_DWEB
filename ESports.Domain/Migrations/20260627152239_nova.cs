@@ -6,11 +6,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ESports.Domain.Migrations
 {
     /// <inheritdoc />
-    public partial class InicializacaoLimpa : Migration
+    public partial class nova : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AppUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
+                    PermissionLevel = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RegistrationDate = table.Column<DateOnly>(type: "date", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppUsers", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -30,10 +47,6 @@ namespace ESports.Domain.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Discriminator = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
-                    PermissionLevel = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    RegistrationDate = table.Column<DateOnly>(type: "date", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -75,8 +88,10 @@ namespace ESports.Domain.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     GameName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false)
+                    PrizePool = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    OwnerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false),
+                    ExternalSourceId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -198,8 +213,9 @@ namespace ESports.Domain.Migrations
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CategoryFK = table.Column<int>(type: "int", nullable: false),
                     LogoPath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false)
+                    OwnerId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsManualOverride = table.Column<bool>(type: "bit", nullable: false),
+                    ExternalSourceId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -216,16 +232,16 @@ namespace ESports.Domain.Migrations
                 name: "Favoritos",
                 columns: table => new
                 {
-                    NormalFK = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NormalFK = table.Column<int>(type: "int", nullable: false),
                     TeamFK = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Favoritos", x => new { x.NormalFK, x.TeamFK });
                     table.ForeignKey(
-                        name: "FK_Favoritos_AspNetUsers_NormalFK",
+                        name: "FK_Favoritos_AppUsers_NormalFK",
                         column: x => x.NormalFK,
-                        principalTable: "AspNetUsers",
+                        principalTable: "AppUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -250,7 +266,8 @@ namespace ESports.Domain.Migrations
                     ExternalSourceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     HomeTeamFK = table.Column<int>(type: "int", nullable: false),
                     AwayTeamFK = table.Column<int>(type: "int", nullable: false),
-                    TournamentFK = table.Column<int>(type: "int", nullable: false)
+                    TournamentFK = table.Column<int>(type: "int", nullable: false),
+                    OwnerId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -399,6 +416,9 @@ namespace ESports.Domain.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "AppUsers");
 
             migrationBuilder.DropTable(
                 name: "Teams");

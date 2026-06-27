@@ -22,23 +22,23 @@ public static class DbInitializer
     /// <returns>Uma Task representando a operação assíncrona.</returns>
     public static async Task Initialize(
         ApplicationDbContext dbContext,
-        UserManager<MyUser> userManager,
+        UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        ArgumentNullException.ThrowIfNull(dbContext, nameof(dbContext));
-        ArgumentNullException.ThrowIfNull(userManager, nameof(userManager));
-        ArgumentNullException.ThrowIfNull(roleManager, nameof(roleManager));
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(userManager);
+        ArgumentNullException.ThrowIfNull(roleManager);
 
         dbContext.Database.EnsureCreated();
         bool haAdicao = false;
 
-        if (!await roleManager.RoleExistsAsync("Admin"))
+        string[] roleNames = { "Admin", "User" };
+        foreach (var roleName in roleNames)
         {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-        }
-        if (!await roleManager.RoleExistsAsync("RegularUser"))
-        {
-            await roleManager.CreateAsync(new IdentityRole("RegularUser"));
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+            }
         }
 
         var defaultAdminEmail = "admin@esports.pt";
@@ -46,27 +46,25 @@ public static class DbInitializer
 
         if (adminUser == null)
         {
-            var identityAdmin = new Admin
+            var identityAdmin = new IdentityUser
             {
                 UserName = defaultAdminEmail,
                 Email = defaultAdminEmail,
-                FullName = "Administrador Master",
-                EmailConfirmed = true,
+                EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(identityAdmin, "Admin_123!");
+            var result = await userManager.CreateAsync(identityAdmin, "PasswordAdmin123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(identityAdmin, "Admin");
-                haAdicao = true;
             }
         }
 
         if (!await dbContext.Categories.AnyAsync())
         {
-            var cs2Category = new Category { Name = "CS2" };
-            var lolCategory = new Category { Name = "LOL" };
-            var dotaCategory = new Category { Name = "DOTA2" };
+            var cs2Category = new Category { Name = "Counter-Strike 2", Code = "CS2" };
+            var lolCategory = new Category { Name = "League of Legends", Code = "LOL" };
+            var dotaCategory = new Category { Name = "Dota 2", Code = "DOTA2" };
 
             var categories = new List<Category> { cs2Category, lolCategory, dotaCategory };
             await dbContext.Categories.AddRangeAsync(categories);
@@ -111,8 +109,8 @@ public static class DbInitializer
 
             if (!await dbContext.Teams.AnyAsync())
             {
-                var cs2 = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "CS2");
-                var lol = await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == "LOL");
+                var cs2 = await dbContext.Categories.FirstOrDefaultAsync(c => c.Code == "CS2" || c.Name == "Counter-Strike 2");
+                var lol = await dbContext.Categories.FirstOrDefaultAsync(c => c.Code == "LOL" || c.Name == "League of Legends");
 
                 if (cs2 != null && lol != null)
                 {

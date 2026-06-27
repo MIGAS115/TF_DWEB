@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using ESports.Domain.Data;
 using ESports.Domain.Models;
 
@@ -11,25 +13,17 @@ namespace WebApp.Pages.Teams;
 
 /// <summary>
 /// PageModel responsável pela lógica de modificação e atualização de equipas existentes.
+/// Restrito a utilizadores com os cargos Admin ou Gestor, validando o Ownership do recurso.
 /// </summary>
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Gestor")]
 public class EditModel : PageModel
 {
-    /// <summary>
-    /// Contexto de acesso à base de dados do projeto.
-    /// </summary>
     private readonly ApplicationDbContext _context;
-
-    /// <summary>
-    /// Ambiente de alojamento web para obtenção dos caminhos físicos do servidor.
-    /// </summary>
     private readonly IWebHostEnvironment _environment;
 
     /// <summary>
     /// Construtor do PageModel com injeção de dependências.
     /// </summary>
-    /// <param name="context">Contexto da base de dados.</param>
-    /// <param name="environment">Ambiente de alojamento web.</param>
     public EditModel(ApplicationDbContext context, IWebHostEnvironment environment)
     {
         _context = context;
@@ -37,7 +31,7 @@ public class EditModel : PageModel
     }
 
     /// <summary>
-    /// Propriedade que armazena os dados da equipa a ser editada, vinculada ao formulário.
+    /// Propriedade que armazena os dados da equipa a ser editada.
     /// </summary>
     [BindProperty]
     public Team Team { get; set; } = null!;
@@ -49,10 +43,13 @@ public class EditModel : PageModel
     public IFormFile? LogoFile { get; set; }
 
     /// <summary>
-    /// Carrega os dados da equipa com base no identificador fornecido.
+    /// Lista de categorias disponíveis para atualizar a associação da equipa.
     /// </summary>
-    /// <param name="id">Chave primária da equipa.</param>
-    /// <returns>A página preenchida ou NotFound caso o ID seja inválido.</returns>
+    public SelectList CategoryList { get; set; } = default!;
+
+    /// <summary>
+    /// Carrega os dados da equipa validando as permissões do utilizador autenticado.
+    /// </summary>
     public async Task<IActionResult> OnGetAsync(int? id)
     {
         if (id == null || _context.Teams == null)
@@ -67,18 +64,27 @@ public class EditModel : PageModel
             return NotFound();
         }
 
+        // Validação de Ownership
+        var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole("Admin") && team.OwnerId != loggedInUserId)
+        {
+            return Forbid();
+        }
+
         Team = team;
+        CategoryList = new SelectList(_context.Categories, "Id", "Name");
+
         return Page();
     }
 
     /// <summary>
-    /// Processa as alterações submetidas, substitui o ficheiro físico do logótipo antigo se necessário e atualiza o registo.
+    /// Processa as alterações, gere a substituição do logótipo eliminando o antigo e atualiza a BD.
     /// </summary>
-    /// <returns>Redirecionamento para o Index em caso de sucesso.</returns>
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
         {
+            CategoryList = new SelectList(_context.Categories, "Id", "Name");
             return Page();
         }
 
@@ -88,9 +94,15 @@ public class EditModel : PageModel
             return NotFound();
         }
 
-        teamToUpdate.Name = Team.Name;
-        teamToUpdate.IsManualOverride = true;
+        // Validação de Ownership (Segurança contra POST falsificado)
+        var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole("Admin") && teamToUpdate.OwnerId != loggedInUserId)
+        {
+            return Forbid();
+        }
 
+        teamToUpdate.Name = Team.Name;
+        teamToUpdate.CategoryFK = Team.CategoryFK;
         if (LogoFile != null && LogoFile.Length > 0)
         {
             var fileExtension = Path.GetExtension(LogoFile.FileName).ToLowerInvariant();
@@ -99,6 +111,7 @@ public class EditModel : PageModel
             if (!extensoesPermitidas.Contains(fileExtension))
             {
                 ModelState.AddModelError(string.Empty, "O ficheiro enviado não é uma imagem válida.");
+                CategoryList = new SelectList(_context.Categories, "Id", "Name");
                 return Page();
             }
 
@@ -133,6 +146,7 @@ public class EditModel : PageModel
         try
         {
             await _context.SaveChangesAsync();
+            return RedirectToPage("./Index");
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -142,19 +156,17 @@ public class EditModel : PageModel
             }
             else
             {
-                ModelState.AddModelError(string.Empty, "A equipa foi modificada por outro utilizador. Por favor, recarregue a página.");
+                ModelState.AddModelError(string.Empty, "A equipa foi modificada por outro utilizador.");
+                CategoryList = new SelectList(_context.Categories, "Id", "Name");
                 return Page();
             }
         }
-
-        return RedirectToPage("./Index");
+        catch (Exception)
+        {
+            return StatusCode(500, "Erro interno ao atualizar a equipa. Contacte o administrador.");
+        }
     }
 
-    /// <summary>
-    /// Avalia a existência de uma equipa com base no identificador.
-    /// </summary>
-    /// <param name="id">Chave primária da equipa.</param>
-    /// <returns>Verdadeiro se a equipa existir; falso caso contrário.</returns>
     private bool TeamExists(int id)
     {
         return (_context.Teams?.Any(e => e.Id == id)).GetValueOrDefault();

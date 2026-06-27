@@ -108,5 +108,12 @@ namespace ESports.Domain.Models
         /// </summary>
         [ValidateNever]
         public Tournament Tournament { get; set; } = null!;
+
+        /// <summary>
+        /// Identificador único (ID do Identity) do utilizador que criou e detém a propriedade do registo.
+        /// Essencial para a validação lógica de autorização baseada em recursos (Ownership).
+        /// </summary>
+        [Display(Name = "Identificador do Proprietário")]
+        public string? OwnerId { get; set; }
     }
 }
