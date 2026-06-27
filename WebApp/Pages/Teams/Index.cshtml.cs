@@ -13,7 +13,7 @@ using ESports.Domain.Models;
 namespace WebApp.Pages.Teams
 {
     /// <summary>
-    /// PageModel responsável pela listagem de equipas e gestão do estado de favoritos dos utilizadores.
+    /// PageModel responsável pela listagem de equipas, paginação de resultados e gestão do estado de favoritos dos utilizadores.
     /// </summary>
     public class IndexModel : PageModel
     {
@@ -29,8 +29,14 @@ namespace WebApp.Pages.Teams
             _userManager = userManager;
         }
 
+        /// <summary>
+        /// Lista das equipas a apresentar na página atual.
+        /// </summary>
         public IList<Team> Teams { get; set; } = [];
 
+        /// <summary>
+        /// Lista de IDs de equipas marcadas como favoritas pelo utilizador autenticado.
+        /// </summary>
         public List<int> UserFavoriteTeamIds { get; set; } = [];
 
         /// <summary>
@@ -39,28 +45,55 @@ namespace WebApp.Pages.Teams
         public HashSet<int> EditableTeamIds { get; set; } = new HashSet<int>();
 
         /// <summary>
-        /// Executa o carregamento assíncrono das equipas registadas, mapeia as permissões de gestão e os favoritos.
+        /// Página atual selecionada na paginação, capturada via QueryString (GET).
+        /// </summary>
+        [BindProperty(SupportsGet = true)]
+        public int PaginaAtual { get; set; } = 1;
+
+        /// <summary>
+        /// Número total de páginas calculado com base na quantidade de registos e limite por página.
+        /// </summary>
+        public int TotalPaginas { get; set; }
+
+        /// <summary>
+        /// Executa o carregamento assíncrono das equipas registadas, aplicando limites de paginação e validando permissões.
         /// </summary>
         public async Task OnGetAsync()
         {
-            if (_context.Teams != null)
+            if (_context.Teams == null)
             {
-                Teams = await _context.Teams.ToListAsync();
+                return;
             }
 
-            // Lógica de Ownership para a interface
+            // --- Lógica de Paginação ---
+            int pageSize = 10; // Número de itens por página (Ajustável)
+            var totalTeams = await _context.Teams.CountAsync();
+            TotalPaginas = (int)Math.Ceiling(totalTeams / (double)pageSize);
+
+            // Validação de segurança para limites da página
+            if (PaginaAtual < 1) PaginaAtual = 1;
+            if (PaginaAtual > TotalPaginas && TotalPaginas > 0) PaginaAtual = TotalPaginas;
+
+            // Busca otimizada usando EF Core com Skip/Take
+            Teams = await _context.Teams
+                .Skip((PaginaAtual - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // --- Lógica de Ownership para a interface ---
             var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var isAdmin = User.IsInRole("Admin");
 
             foreach (var team in Teams)
             {
+                // Se é admin ou é o dono do registo, adiciona ao HashSet de itens editáveis
                 if (isAdmin || (!string.IsNullOrEmpty(loggedInUserId) && team.OwnerId == loggedInUserId))
                 {
                     EditableTeamIds.Add(team.Id);
                 }
             }
 
-            // Obtém a credencial de segurança autenticada para Favoritos
+            // --- Obtém a credencial de segurança autenticada para Favoritos ---
             var identityUser = await _userManager.GetUserAsync(User);
 
             if (identityUser != null && _context.Favorites != null)
@@ -79,7 +112,7 @@ namespace WebApp.Pages.Teams
         }
 
         /// <summary>
-        /// Alterna o estado de favorito de uma equipa para o utilizador autenticado.
+        /// Alterna o estado de favorito de uma equipa para o utilizador autenticado, sem causar perdas de exceções na BD.
         /// </summary>
         public async Task<IActionResult> OnPostToggleFavoriteAsync(int teamId)
         {
@@ -89,11 +122,11 @@ namespace WebApp.Pages.Teams
                 return Challenge();
             }
 
-        var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
-        if (!teamExists)
-        {
-            return NotFound();
-        }
+            var teamExists = await _context.Teams.AnyAsync(t => t.Id == teamId);
+            if (!teamExists)
+            {
+                return NotFound();
+            }
 
             var regularUser = await _context.RegularUsers
                 .FirstOrDefaultAsync(u => u.UserID == identityUser.Id);
@@ -130,9 +163,12 @@ namespace WebApp.Pages.Teams
             }
             catch (Exception)
             {
-                return StatusCode(500, "Ocorreu um erro interno ao processar a operação de favoritos.");
+                // Tratamento seguro de exceções de acordo com o padrão do professor (sem stack traces cruas)
+                return StatusCode(500, "Ocorreu um erro interno ao processar a operação de favoritos. Contacte administrador.");
             }
 
-        return RedirectToPage("./Index", new { paginaAtual = PaginaAtual });
+            // Redireciona de volta preservando o estado de paginação atual do Utilizador
+            return RedirectToPage("./Index", new { paginaAtual = PaginaAtual });
+        }
     }
 }

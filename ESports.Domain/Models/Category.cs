@@ -21,6 +21,14 @@ public class Category
     [Display(Name = "Nome da Categoria")]
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Código abreviado, sigla ou acrónimo da categoria do jogo (ex: CS2, LOL, DOTA2).
+    /// </summary>
+    [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+    [StringLength(10, ErrorMessage = "O {0} deve ter no máximo {1} caracteres.")]
+    [Display(Name = "Código da Categoria")]
+    public string Code { get; set; } = string.Empty;
+
     /* ****************************************
      * Construção dos Relacionamentos
      * *************************************** */
