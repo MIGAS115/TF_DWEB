@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebApp.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <partial name="_CookieConsentPartial" />
 
     <header>
@@ -41,13 +41,13 @@
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container flex-grow-1 d-flex flex-column">
+        <main role="main" class="pb-3 flex-grow-1 d-flex flex-column">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted py-3">
+    <footer class="border-top footer text-muted py-3 mt-auto bg-white">
         <div class="container d-flex flex-wrap justify-content-between align-items-center">
             <span>&copy; 2026 - Plataforma E-Sports IPT</span>
             <div class="mt-2 mt-md-0">

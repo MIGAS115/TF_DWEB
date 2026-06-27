@@ -131,7 +131,7 @@ public class PandaScoreWorker : BackgroundService
                 internalCategoryName = "DOTA2";
             }
 
-            var category = await context.Categories.FirstOrDefaultAsync(c => c.Name == internalCategoryName, stoppingToken);
+            var category = await context.Categories.FirstOrDefaultAsync(c => c.Code == internalCategoryName, stoppingToken);
             if (category == null) continue;
 
             var tournament = await context.Tournaments.FirstOrDefaultAsync(t => t.ExternalSourceId == apiMatch.Tournament.Id.ToString(), stoppingToken);
