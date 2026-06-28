@@ -99,5 +99,5 @@ O projeto está estruturado em três camadas:
 * A relação **M-N** é `Tournament` ↔ `Team` (via `TournamentTeam`) e `User` ↔ `Team` via Favorites.
 
 **Detalhes adicionais:**
-* Os logótipos das Teams são feitos upload e armazenados como ficheiros no servidor.
+* Os logótipos das Teams são feitos pela API PandaScore e armazenados como ficheiros no servidor.
 * O campo `ExternalSourceId` em Teams, Matches e Tournaments está reservado para futura integração com external e-sports data APIs.
